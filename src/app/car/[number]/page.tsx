@@ -5,12 +5,11 @@ import type { Car } from '@/lib/types'
 import { CAR_TYPE_LABELS } from '@/lib/types'
 import CarPageClient from './CarPageClient'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 async function getCar(carNumber: number): Promise<Car | null> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
   const { data, error } = await supabase
     .from('cars')
     .select('id, car_number, name, car_type, color, parked_x, parked_z, parked_rotation, created_at')
