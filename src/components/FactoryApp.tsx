@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import FactoryScene from '@/components/factory/FactoryScene'
-import type { ProductionJob } from '@/components/factory/FactoryScene'
+import type { ProductionJob, CelebrationState } from '@/components/factory/FactoryScene'
 import HUD from '@/components/ui/HUD'
 import EmailClaimBar from '@/components/ui/EmailClaimBar'
 import type { Car } from '@/lib/types'
@@ -15,6 +15,7 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
   const [cars, setCars] = useState<Car[]>(initialCars)
   const [flyToTarget, setFlyToTarget] = useState<[number, number, number] | null>(null)
   const [productionJob, setProductionJob] = useState<ProductionJob | null>(null)
+  const [celebration, setCelebration] = useState<CelebrationState | null>(null)
 
   const handleFlyTo = useCallback((position: [number, number, number]) => {
     setFlyToTarget(null)
@@ -33,14 +34,19 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
 
   const handleStartProduction = useCallback((job: ProductionJob) => {
     setProductionJob(job)
-    // Fly camera to follow the conveyor belt
-    handleFlyTo([0, 10, -40])
-  }, [handleFlyTo])
+    setCelebration(null)
+  }, [])
 
   const handleProductionComplete = useCallback(() => {
     setProductionJob(null)
     handleCarsChanged()
   }, [handleCarsChanged])
+
+  const handleCelebrate = useCallback((state: CelebrationState) => {
+    setCelebration(state)
+    // Auto-dismiss celebration after 15 seconds
+    setTimeout(() => setCelebration(null), 15000)
+  }, [])
 
   return (
     <>
@@ -49,12 +55,14 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
         flyToTarget={flyToTarget}
         productionJob={productionJob}
         onProductionComplete={handleProductionComplete}
+        celebration={celebration}
       />
       <HUD
         carCount={cars.length}
         onFlyTo={handleFlyTo}
         onCarsChanged={handleCarsChanged}
         onStartProduction={handleStartProduction}
+        onCelebrate={handleCelebrate}
       />
       <EmailClaimBar />
     </>

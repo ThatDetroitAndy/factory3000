@@ -13,10 +13,19 @@ import CameraControls from './CameraControls'
 import ProductionCar from './ProductionCar'
 import FactoryProps from './FactoryProps'
 import FactoryBuilding from './FactoryBuilding'
+import CelebrationOverlay from './CelebrationOverlay'
 
 export interface ProductionJob {
   carType: CarType
   color: string
+}
+
+export interface CelebrationState {
+  name: string
+  carNumber: number
+  carType: CarType
+  color: string
+  position: [number, number, number]
 }
 
 interface FactorySceneProps {
@@ -24,6 +33,7 @@ interface FactorySceneProps {
   flyToTarget?: [number, number, number] | null
   productionJob?: ProductionJob | null
   onProductionComplete?: () => void
+  celebration?: CelebrationState | null
 }
 
 export default function FactoryScene({
@@ -31,19 +41,18 @@ export default function FactoryScene({
   flyToTarget,
   productionJob,
   onProductionComplete,
+  celebration,
 }: FactorySceneProps) {
   return (
     <div className="w-full h-full">
       <Canvas
         shadows
         camera={{ position: [80, 80, 80], fov: 50, near: 0.1, far: 2000 }}
-        gl={{ antialias: true, toneMapping: 3 }} // ACESFilmicToneMapping
+        gl={{ antialias: true, toneMapping: 3 }}
       >
-        {/* Warm sky gradient background */}
         <color attach="background" args={['#87CEEB']} />
 
         <Suspense fallback={null}>
-          {/* Environment map for nice reflections */}
           <Environment preset="sunset" environmentIntensity={0.4} />
 
           <FactoryLighting />
@@ -59,6 +68,14 @@ export default function FactoryScene({
               carType={productionJob.carType}
               color={productionJob.color}
               onComplete={() => onProductionComplete?.()}
+            />
+          )}
+
+          {celebration && (
+            <CelebrationOverlay
+              name={celebration.name}
+              carNumber={celebration.carNumber}
+              position={celebration.position}
             />
           )}
         </Suspense>

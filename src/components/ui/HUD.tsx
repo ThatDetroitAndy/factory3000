@@ -4,16 +4,17 @@ import { useState } from 'react'
 import { SUBSCRIBER_COUNT } from '@/lib/constants'
 import SearchBar from './SearchBar'
 import CarBuilder from '@/components/builder/CarBuilder'
-import type { ProductionJob } from '@/components/factory/FactoryScene'
+import type { ProductionJob, CelebrationState } from '@/components/factory/FactoryScene'
 
 interface HUDProps {
   carCount: number
   onFlyTo: (position: [number, number, number]) => void
   onCarsChanged: () => void
   onStartProduction: (job: ProductionJob) => void
+  onCelebrate: (state: CelebrationState) => void
 }
 
-export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProduction }: HUDProps) {
+export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProduction, onCelebrate }: HUDProps) {
   const [showBuilder, setShowBuilder] = useState(false)
   const remaining = SUBSCRIBER_COUNT - carCount
 
@@ -82,6 +83,7 @@ export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProductio
           onStartProduction={onStartProduction}
           onCarsChanged={onCarsChanged}
           onFlyTo={onFlyTo}
+          onCelebrate={onCelebrate}
         />
       )}
     </>
