@@ -5,6 +5,16 @@ YouTube-driven virtual car factory. **1 Subscriber = 1 Car.** Browser-based 3D f
 
 Related to Mutiny Motors (~​/Mutiny Motors) — Factory 3000 is the digital/YouTube/community side. Separate codebase, separate deploy.
 
+## Core Objective
+The audience is **kids and young adults** from Andy's YouTube channel. The site should feel like a **good video game** — polished models, good sprites, satisfying interactions. The goals:
+1. **Fun first** — visitors should have a blast the moment they load the page
+2. **Sense of progress** — as more subscribers join, the world gets fuller, more alive. The subscriber count going up should feel like a collective mission.
+3. **Incentivize subscribing** — the experience should make people *want* to subscribe and tell friends to subscribe
+4. **Identity** — each car gets a unique number, giving owners a sense of "I was car #4,712"
+5. **Social sharing** — users should be able to share an image of their car + number on social media to flex and recruit
+6. **Match the real factory** — car models should reflect the real vehicles being built at the physical factory (abstract/simple for now since final designs aren't done). The factory building matches Andy's real Detroit factory (reference screenshots on Andy's desktop from Google Maps).
+7. **Show the potential** — 381K subscriber crates in the warehouse = visible potential. Every unclaimed crate is a car waiting to be built.
+
 ## Live Site
 **https://factory3000.vercel.app**
 
@@ -43,18 +53,43 @@ Related to Mutiny Motors (~​/Mutiny Motors) — Factory 3000 is the digital/Yo
 - HUD with car counter + progress bar
 - Deployed to Vercel with Supabase env vars
 
-### TODO
-- [ ] Drive mode (WASD keyboard controls, third-person camera follow)
-- [ ] Mobile touch controls for driving
-- [ ] Car name max length tuning (currently 24 chars)
-- [ ] Domain name (factory3000.com? mutinyfactory.com?)
-- [ ] Service role key in Vercel env (needed for server-side car creation)
-- [ ] Supabase Auth email templates customization
+## Roadmap
 
-### Future Phases
-- **Phase 3:** InstancedMesh for 100K+ cars, better .glb car models, YouTube API subscriber count, sound effects, mobile optimization
-- **Phase 4:** $5 car photo (canvas capture + Stripe), toy store, kit preorders, STL downloads
-- **Phase 5:** Multiplayer driving, factory expansion animations, car upgrades
+### Phase 2.5 — Polish & Playable ← CURRENT
+Make the site feel like a real game. Right now it works — this phase makes it *fun*.
+- [ ] **Drive mode** — WASD keyboard controls, third-person camera follow, smooth physics
+- [ ] **Mobile touch controls** — virtual joystick + buttons for driving on phones
+- [ ] **Sound effects** — engine hum, conveyor clanks, celebration fanfare, ambient factory noise
+- [ ] **Visual polish** — better lighting, shadows, post-processing (bloom, AO)
+- [ ] **Car name max length tuning** (currently 24 chars — may need adjusting)
+- [ ] **Service role key** in Vercel env (needed for server-side car creation)
+- [ ] **Domain name** setup (factory3000.com? mutinyfactory.com?)
+
+### Phase 3 — Scale & Share
+Handle real traffic, make sharing irresistible.
+- [ ] **InstancedMesh rendering** for 100K+ cars in the parking lot (perf critical)
+- [ ] **Better car models** — .glb imports replacing primitives, matching real factory vehicle designs (abstract/toylike)
+- [ ] **YouTube API integration** — live subscriber count displayed in-world, crate count updates automatically
+- [ ] **Social share image** — generate a screenshot/card of your car + number + name, optimized for Twitter/IG/TikTok
+- [ ] **Mobile performance** — LOD, culling, reduced draw calls for phones
+- [ ] **Supabase Auth email templates** — branded magic link emails
+- [ ] **Loading screen** — branded, fun, shows factory progress stats while loading 3D
+
+### Phase 4 — Monetization & Merch
+Turn engagement into revenue to fund the real factory.
+- [ ] **$5 car photo** — high-res canvas capture + Stripe checkout, downloadable image
+- [ ] **Toy store page** — merch, physical toy cars, kits
+- [ ] **Kit preorder system** — reserve a real kit car
+- [ ] **STL downloads** — 3D printable versions of the car models
+- [ ] **Factory milestone visuals** — factory expands/upgrades visually as subscriber milestones are hit (10K, 50K, 100K, etc.)
+
+### Phase 5 — Multiplayer & Community
+Make it a living world.
+- [ ] **Multiplayer driving** — see other players driving in real-time (WebSocket or Supabase Realtime)
+- [ ] **Car upgrades** — spoilers, decals, wheels, paint jobs
+- [ ] **Leaderboard / community features** — most miles driven, oldest car, etc.
+- [ ] **Factory expansion animations** — the factory physically grows as the community grows
+- [ ] **Events** — limited edition cars, subscriber milestone celebrations
 
 ## Key Concepts
 - **381K existing subscribers** → numbered crates in warehouse zone (InstancedMesh, visual only)
@@ -136,6 +171,26 @@ src/
 
 ## How We Work
 Andy works directly with Claude in Claude Code. Conversations are stream-of-consciousness. The factory building is modeled after Andy's real factory in Detroit. Style inspiration: Bruno Simon (bruno-simon.com).
+
+### Visual Development Loop
+When working on visual/3D changes, Claude should:
+1. Make the code change
+2. Open a browser preview (use `mcp__Claude_Preview__preview_start` or equivalent)
+3. Take a screenshot and evaluate the visual result
+4. Form an opinion — does it look good? Does it match the toylike/video-game aesthetic?
+5. Iterate until the visual quality is genuinely good, not just "works"
+6. The bar is "would a kid think this is cool?" — not "does it render without errors"
+
+### Progress Tracking
+- **Update CLAUDE.md** after completing roadmap items — check off completed tasks, add notes on what was built
+- **Update "Built" list** in Current Status when features ship
+- This ensures the next Claude agent picking up the project knows exactly where things stand
+- When starting a new session, read CLAUDE.md first to understand current state
+
+### Reference Material
+- Factory reference photos: check Andy's desktop for Google Maps screenshots of 5938 Linsdale, Detroit
+- Car design reference: abstract/toylike for now — real vehicle designs TBD from the physical factory
+- Style reference: bruno-simon.com — warm, playful, interactive, feels like a toy world
 
 ## Rules
 - AI name filter on all car names (blocklist + Claude Haiku, fail-open)
