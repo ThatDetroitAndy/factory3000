@@ -1,23 +1,30 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, Text } from '@react-three/drei'
 import * as THREE from 'three'
+import { playFanfare } from '@/lib/sounds'
 
 interface CelebrationOverlayProps {
   name: string
   carNumber: number
   position: [number, number, number]
+  onStartDrive?: () => void
 }
 
 /**
  * 3D celebration that appears above a newly built car.
  * Big floating name, sparkle effects, "YOUR CAR IS READY" text.
  */
-export default function CelebrationOverlay({ name, carNumber, position }: CelebrationOverlayProps) {
+export default function CelebrationOverlay({ name, carNumber, position, onStartDrive }: CelebrationOverlayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const time = useRef(0)
+
+  // Play fanfare once on mount
+  useEffect(() => {
+    playFanfare()
+  }, [])
 
   useFrame((_, delta) => {
     time.current += delta
@@ -96,18 +103,27 @@ export default function CelebrationOverlay({ name, carNumber, position }: Celebr
             <meshStandardMaterial
               color={['#FFD700', '#FF6B4A', '#4ECDC4', '#FF9FF3'][i % 4]}
               emissive={['#FFD700', '#FF6B4A', '#4ECDC4', '#FF9FF3'][i % 4]}
-              emissiveIntensity={0.5}
+              emissiveIntensity={2}
             />
           </mesh>
         )
       })}
 
-      {/* HTML overlay for share link + drive prompt */}
+      {/* HTML overlay — drive prompt + button */}
       <Html position={[0, -2.5, 0]} center distanceFactor={12}>
-        <div className="text-center select-none pointer-events-none">
-          <p className="text-white text-lg font-black drop-shadow-lg bg-black/40 backdrop-blur-sm px-4 py-2 rounded-xl">
-            Press <kbd className="bg-orange-500 px-2 py-0.5 rounded text-sm mx-1">WASD</kbd> to drive!
-          </p>
+        <div className="text-center select-none">
+          {onStartDrive ? (
+            <button
+              onClick={onStartDrive}
+              className="bg-orange-500 hover:bg-orange-400 text-white font-black px-5 py-2.5 rounded-xl text-base shadow-xl transition-colors pointer-events-auto"
+            >
+              Drive! (WASD)
+            </button>
+          ) : (
+            <p className="text-white text-lg font-black drop-shadow-lg bg-black/40 backdrop-blur-sm px-4 py-2 rounded-xl pointer-events-none">
+              Press <kbd className="bg-orange-500 px-2 py-0.5 rounded text-sm mx-1">WASD</kbd> to drive!
+            </p>
+          )}
         </div>
       </Html>
     </group>
@@ -130,11 +146,11 @@ function SparkleOrb({ baseAngle, radius, speed }: { baseAngle: number; radius: n
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[0.1, 6, 6]} />
+      <sphereGeometry args={[0.12, 6, 6]} />
       <meshStandardMaterial
         color="#FFD700"
         emissive="#FFAA00"
-        emissiveIntensity={1}
+        emissiveIntensity={3}
       />
     </mesh>
   )

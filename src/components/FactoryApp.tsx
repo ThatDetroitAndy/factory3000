@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from 'react'
 import FactoryScene from '@/components/factory/FactoryScene'
-import type { ProductionJob, CelebrationState } from '@/components/factory/FactoryScene'
+import type { ProductionJob, CelebrationState, DriveModeState } from '@/components/factory/FactoryScene'
 import HUD from '@/components/ui/HUD'
 import EmailClaimBar from '@/components/ui/EmailClaimBar'
+import DriveControls from '@/components/ui/DriveControls'
 import type { Car } from '@/lib/types'
 
 interface FactoryAppProps {
@@ -16,6 +17,7 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
   const [flyToTarget, setFlyToTarget] = useState<[number, number, number] | null>(null)
   const [productionJob, setProductionJob] = useState<ProductionJob | null>(null)
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
+  const [driveModeState, setDriveModeState] = useState<DriveModeState | null>(null)
 
   const handleFlyTo = useCallback((position: [number, number, number]) => {
     setFlyToTarget(null)
@@ -35,6 +37,7 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
   const handleStartProduction = useCallback((job: ProductionJob) => {
     setProductionJob(job)
     setCelebration(null)
+    setDriveModeState(null)
   }, [])
 
   const handleProductionComplete = useCallback(() => {
@@ -45,8 +48,24 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
   const handleCelebrate = useCallback((state: CelebrationState) => {
     setCelebration(state)
     // Auto-dismiss celebration after 15 seconds
-    setTimeout(() => setCelebration(null), 15000)
+    setTimeout(() => setCelebration(prev => prev?.carNumber === state.carNumber ? null : prev), 15000)
   }, [])
+
+  const handleStartDrive = useCallback(() => {
+    if (!celebration) return
+    setDriveModeState({
+      carType: celebration.carType,
+      color: celebration.color,
+      startPosition: celebration.position,
+    })
+    setCelebration(null)
+  }, [celebration])
+
+  const handleExitDrive = useCallback(() => {
+    setDriveModeState(null)
+  }, [])
+
+  const isDriving = !!driveModeState
 
   return (
     <>
@@ -56,15 +75,21 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
         productionJob={productionJob}
         onProductionComplete={handleProductionComplete}
         celebration={celebration}
+        onStartDrive={celebration ? handleStartDrive : undefined}
+        driveModeState={driveModeState}
+        onExitDrive={handleExitDrive}
       />
-      <HUD
-        carCount={cars.length}
-        onFlyTo={handleFlyTo}
-        onCarsChanged={handleCarsChanged}
-        onStartProduction={handleStartProduction}
-        onCelebrate={handleCelebrate}
-      />
-      <EmailClaimBar />
+      {!isDriving && (
+        <HUD
+          carCount={cars.length}
+          onFlyTo={handleFlyTo}
+          onCarsChanged={handleCarsChanged}
+          onStartProduction={handleStartProduction}
+          onCelebrate={handleCelebrate}
+        />
+      )}
+      {isDriving && <DriveControls onExit={handleExitDrive} />}
+      {!isDriving && <EmailClaimBar />}
     </>
   )
 }

@@ -14,6 +14,7 @@ import ProductionCar from './ProductionCar'
 import FactoryProps from './FactoryProps'
 import FactoryBuilding from './FactoryBuilding'
 import CelebrationOverlay from './CelebrationOverlay'
+import DriveMode from './DriveMode'
 
 export interface ProductionJob {
   carType: CarType
@@ -28,12 +29,21 @@ export interface CelebrationState {
   position: [number, number, number]
 }
 
+export interface DriveModeState {
+  carType: CarType
+  color: string
+  startPosition: [number, number, number]
+}
+
 interface FactorySceneProps {
   cars: Car[]
   flyToTarget?: [number, number, number] | null
   productionJob?: ProductionJob | null
   onProductionComplete?: () => void
   celebration?: CelebrationState | null
+  onStartDrive?: () => void
+  driveModeState?: DriveModeState | null
+  onExitDrive?: () => void
 }
 
 export default function FactoryScene({
@@ -42,15 +52,21 @@ export default function FactoryScene({
   productionJob,
   onProductionComplete,
   celebration,
+  onStartDrive,
+  driveModeState,
+  onExitDrive,
 }: FactorySceneProps) {
+  const isDriving = !!driveModeState
+
   return (
     <div className="w-full h-full">
       <Canvas
         shadows
         camera={{ position: [80, 80, 80], fov: 50, near: 0.1, far: 2000 }}
-        gl={{ antialias: true, toneMapping: 3 }}
+        gl={{ antialias: true, toneMapping: 4 /* ACESFilmic */ }}
       >
         <color attach="background" args={['#87CEEB']} />
+        <fog attach="fog" args={['#C8E8F8', 200, 800]} />
 
         <Suspense fallback={null}>
           <Environment preset="sunset" environmentIntensity={0.4} />
@@ -71,16 +87,30 @@ export default function FactoryScene({
             />
           )}
 
-          {celebration && (
+          {celebration && !isDriving && (
             <CelebrationOverlay
               name={celebration.name}
               carNumber={celebration.carNumber}
               position={celebration.position}
+              onStartDrive={onStartDrive}
+            />
+          )}
+
+          {isDriving && driveModeState && (
+            <DriveMode
+              carType={driveModeState.carType}
+              color={driveModeState.color}
+              startPosition={driveModeState.startPosition}
+              onExit={() => onExitDrive?.()}
             />
           )}
         </Suspense>
 
-        <CameraControls flyToTarget={flyToTarget} isProducing={!!productionJob} />
+        <CameraControls
+          flyToTarget={flyToTarget}
+          isProducing={!!productionJob}
+          driveMode={isDriving}
+        />
       </Canvas>
     </div>
   )
