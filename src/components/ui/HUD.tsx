@@ -12,9 +12,10 @@ interface HUDProps {
   onCarsChanged: () => void
   onStartProduction: (job: ProductionJob) => void
   onCelebrate: (state: CelebrationState) => void
+  hideCounter?: boolean
 }
 
-export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProduction, onCelebrate }: HUDProps) {
+export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProduction, onCelebrate, hideCounter }: HUDProps) {
   const [showBuilder, setShowBuilder] = useState(false)
   const remaining = SUBSCRIBER_COUNT - carCount
 
@@ -45,8 +46,8 @@ export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProductio
           </div>
         </div>
 
-        {/* Bottom bar — car counter */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {/* Bottom bar — car counter (hidden on mobile when claim bar is visible to avoid overlap) */}
+        <div className={`absolute bottom-0 left-0 right-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] ${hideCounter ? 'hidden sm:block' : ''}`}>
           <div className="flex items-center gap-4">
             <div className="bg-white/90 backdrop-blur-sm rounded-xl px-5 py-3 pointer-events-auto shadow-xl">
               <div className="flex items-center gap-4">

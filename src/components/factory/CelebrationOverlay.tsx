@@ -117,11 +117,11 @@ export default function CelebrationOverlay({ name, carNumber, position, onStartD
               onClick={onStartDrive}
               className="bg-orange-500 hover:bg-orange-400 text-white font-black px-5 py-2.5 rounded-xl text-base shadow-xl transition-colors pointer-events-auto"
             >
-              Drive! (WASD)
+              Drive!
             </button>
           ) : (
             <p className="text-white text-lg font-black drop-shadow-lg bg-black/40 backdrop-blur-sm px-4 py-2 rounded-xl pointer-events-none">
-              Press <kbd className="bg-orange-500 px-2 py-0.5 rounded text-sm mx-1">WASD</kbd> to drive!
+              Use controls to drive!
             </p>
           )}
         </div>

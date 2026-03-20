@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import FactoryScene from '@/components/factory/FactoryScene'
 import type { ProductionJob, CelebrationState, DriveModeState } from '@/components/factory/FactoryScene'
 import HUD from '@/components/ui/HUD'
@@ -18,6 +18,19 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
   const [productionJob, setProductionJob] = useState<ProductionJob | null>(null)
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
   const [driveModeState, setDriveModeState] = useState<DriveModeState | null>(null)
+  const [claimBarVisible, setClaimBarVisible] = useState(false)
+
+  // Track whether the EmailClaimBar is showing so we can hide the HUD counter to avoid overlap
+  useEffect(() => {
+    setClaimBarVisible(!!localStorage.getItem('unclaimed_car'))
+    const handler = () => setClaimBarVisible(!!localStorage.getItem('unclaimed_car'))
+    window.addEventListener('car-built', handler)
+    window.addEventListener('claim-bar-dismissed', handler)
+    return () => {
+      window.removeEventListener('car-built', handler)
+      window.removeEventListener('claim-bar-dismissed', handler)
+    }
+  }, [])
 
   const handleFlyTo = useCallback((position: [number, number, number]) => {
     setFlyToTarget(null)
@@ -86,6 +99,7 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
           onCarsChanged={handleCarsChanged}
           onStartProduction={handleStartProduction}
           onCelebrate={handleCelebrate}
+          hideCounter={claimBarVisible}
         />
       )}
       {isDriving && <DriveControls onExit={handleExitDrive} />}

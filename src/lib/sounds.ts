@@ -4,13 +4,28 @@
  */
 
 let ctx: AudioContext | null = null
+let audioUnlocked = false
+
+// iOS Safari requires a user gesture before AudioContext can play.
+// We install a one-time capture-phase listener so the very first tap
+// anywhere on the page resumes the context.
+function installUnlockListener() {
+  if (typeof document === 'undefined') return
+  const handler = () => {
+    audioUnlocked = true
+    if (ctx && ctx.state === 'suspended') ctx.resume()
+    document.removeEventListener('pointerdown', handler, true)
+  }
+  document.addEventListener('pointerdown', handler, true)
+}
+installUnlockListener()
 
 function getCtx(): AudioContext {
   if (!ctx) {
     ctx = new AudioContext()
   }
-  // Resume if suspended (browsers require a user gesture before audio plays)
-  if (ctx.state === 'suspended') {
+  // Resume if the user has already unlocked audio (non-iOS) or if unlocked via gesture
+  if (ctx.state === 'suspended' && audioUnlocked) {
     ctx.resume()
   }
   return ctx
