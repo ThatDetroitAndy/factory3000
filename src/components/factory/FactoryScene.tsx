@@ -59,9 +59,10 @@ export default function FactoryScene({
   const isDriving = !!driveModeState
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" style={{ touchAction: 'none' }}>
       <Canvas
         shadows
+        dpr={[1, 1.5]}
         camera={{ position: [80, 80, 80], fov: 50, near: 0.1, far: 2000 }}
         gl={{ antialias: true, toneMapping: 4 /* ACESFilmic */ }}
       >

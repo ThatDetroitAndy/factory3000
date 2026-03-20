@@ -47,6 +47,7 @@ export default function EmailClaimBar() {
       if (res.ok) {
         setStatus('sent')
         localStorage.removeItem('unclaimed_car')
+        window.dispatchEvent(new Event('claim-bar-dismissed'))
       } else {
         setStatus('error')
       }
@@ -77,7 +78,7 @@ export default function EmailClaimBar() {
             Save Car #{carNumber} to your account
           </p>
           <button
-            onClick={() => setDismissed(true)}
+            onClick={() => { setDismissed(true); window.dispatchEvent(new Event('claim-bar-dismissed')) }}
             className="text-zinc-300 hover:text-zinc-500 text-lg leading-none ml-2"
           >
             &times;
