@@ -10,8 +10,8 @@ export const CRATE_SIZE = 2
 export const CRATE_SPACING = 2.5
 export const CRATE_COLS = 100
 
-// Car name constraints
-export const CAR_NAME_MAX_LENGTH = 24
+// Car name constraints — 20 chars fits cleanly on the 3D celebration text
+export const CAR_NAME_MAX_LENGTH = 20
 
 // Factory dimensions
 export const FACTORY_WIDTH = 500

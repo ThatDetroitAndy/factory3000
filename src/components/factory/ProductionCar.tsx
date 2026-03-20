@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import CarModel from './CarModel'
 import type { CarType } from '@/lib/types'
+import { startConveyorHum, stopConveyorHum } from '@/lib/sounds'
 
 interface ProductionCarProps {
   carType: CarType
@@ -32,7 +33,7 @@ export default function ProductionCar({ carType, color, onComplete }: Production
   const TOTAL_DISTANCE = END_Z - START_Z
   const SPEED = 12
 
-  // Initialize camera to starting position
+  // Initialize camera to starting position and start conveyor sound
   useEffect(() => {
     if (groupRef.current) {
       const startPos = new THREE.Vector3(BELT_X, BELT_Y, START_Z)
@@ -41,6 +42,8 @@ export default function ProductionCar({ carType, color, onComplete }: Production
       camera.position.copy(smoothCamPos.current)
       camera.lookAt(smoothLookAt.current)
     }
+    startConveyorHum()
+    return () => stopConveyorHum()
   }, [camera])
 
   useFrame((_, delta) => {
