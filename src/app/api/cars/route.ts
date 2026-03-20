@@ -29,6 +29,9 @@ export async function GET() {
 // POST — register a new car (no auth required)
 export async function POST(request: NextRequest) {
   // Use service key for inserts (bypasses RLS)
+  if (!supabaseServiceKey) {
+    console.warn('[POST /api/cars] SUPABASE_SERVICE_KEY not set — falling back to anon key. Insert may fail if RLS blocks anonymous writes.')
+  }
   const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey)
 
   const body = await request.json()
@@ -85,11 +88,15 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       car_type,
       color,
+      parked_x: 0,
+      parked_z: 0,
+      parked_rotation: 0,
     })
-    .select('id, car_number, name, car_type, color, created_at')
+    .select('id, car_number, name, car_type, color, parked_x, parked_z, parked_rotation, created_at')
     .single()
 
   if (insertError) {
+    console.error('[POST /api/cars] Insert error:', insertError)
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 

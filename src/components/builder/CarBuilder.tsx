@@ -71,7 +71,8 @@ export default function CarBuilder({ onClose, onStartProduction, onCarsChanged, 
 
       // Close the builder — celebration is handled in the 3D scene
       onClose()
-    } catch {
+    } catch (err) {
+      console.error('[CarBuilder] fetch error:', err)
       setError('Network error — please try again')
       setStep('name')
     }
