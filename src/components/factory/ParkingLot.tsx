@@ -4,6 +4,7 @@ import { PARKING_SPACING, PARKING_COLS } from '@/lib/constants'
 import type { Car } from '@/lib/types'
 import CarModel from './CarModel'
 import CarNameTag from './CarNameTag'
+import { isMobileDevice } from '@/lib/isMobile'
 
 interface ParkingLotProps {
   cars: Car[]
@@ -17,7 +18,11 @@ function getGridPosition(index: number): [number, number, number] {
   return [x, 0, z]
 }
 
+const MOBILE_NAME_TAG_LIMIT = 20
+
 export default function ParkingLot({ cars }: ParkingLotProps) {
+  const mobile = isMobileDevice()
+
   return (
     <group>
       {/* Parking lot surface — smooth lighter concrete */}
@@ -57,11 +62,13 @@ export default function ParkingLot({ cars }: ParkingLotProps) {
               rotation={[0, car.parked_rotation, 0]}
               scale={1.3}
             />
-            <CarNameTag
-              name={car.name}
-              carNumber={car.car_number}
-              position={position}
-            />
+            {(!mobile || i < MOBILE_NAME_TAG_LIMIT) && (
+              <CarNameTag
+                name={car.name}
+                carNumber={car.car_number}
+                position={position}
+              />
+            )}
           </group>
         )
       })}

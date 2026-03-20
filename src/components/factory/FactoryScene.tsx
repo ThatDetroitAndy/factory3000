@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import type { Car, CarType } from '@/lib/types'
+import { isMobileDevice } from '@/lib/isMobile'
 import FactoryFloor from './FactoryFloor'
 import FactoryLighting from './FactoryLighting'
 import ParkingLot from './ParkingLot'
@@ -57,13 +58,14 @@ export default function FactoryScene({
   onExitDrive,
 }: FactorySceneProps) {
   const isDriving = !!driveModeState
+  const mobile = isMobileDevice()
 
   return (
     <div className="w-full h-full">
       <Canvas
-        shadows
+        shadows={mobile ? false : true}
         camera={{ position: [80, 80, 80], fov: 50, near: 0.1, far: 2000 }}
-        gl={{ antialias: true, toneMapping: 4 /* ACESFilmic */ }}
+        gl={{ antialias: !mobile, toneMapping: 4 /* ACESFilmic */ }}
       >
         <color attach="background" args={['#87CEEB']} />
         <fog attach="fog" args={['#C8E8F8', 200, 800]} />

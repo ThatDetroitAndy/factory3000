@@ -1,6 +1,7 @@
 'use client'
 
 import * as THREE from 'three'
+import { isMobileDevice } from '@/lib/isMobile'
 
 /** Low-poly tree — chunky trunk + round canopy */
 function Tree({ position, scale = 1, color = '#4CAF50' }: { position: [number, number, number]; scale?: number; color?: string }) {
@@ -187,59 +188,61 @@ function RoadStripes({ start, end }: { start: [number, number, number]; end: [nu
 
 /** All factory decorations and props */
 export default function FactoryProps() {
+  const mobile = isMobileDevice()
+
   return (
     <group>
       {/* Trees around the perimeter */}
       <Tree position={[-60, 0, -40]} scale={1.2} color="#4CAF50" />
       <Tree position={[-55, 0, 20]} scale={0.9} color="#66BB6A" />
-      <Tree position={[-65, 0, 60]} scale={1.1} color="#4CAF50" />
       <Tree position={[60, 0, -30]} scale={1} color="#81C784" />
       <Tree position={[65, 0, 40]} scale={1.3} color="#4CAF50" />
-      <Tree position={[55, 0, 80]} scale={0.8} color="#66BB6A" />
-      <Tree position={[-50, 0, 90]} scale={1.4} color="#388E3C" />
-      <Tree position={[0, 0, 100]} scale={1} color="#4CAF50" />
-      <Tree position={[40, 0, 95]} scale={1.2} color="#66BB6A" />
-      <Tree position={[-70, 0, -80]} scale={1} color="#81C784" />
-      <Tree position={[70, 0, -70]} scale={0.9} color="#4CAF50" />
+      {!mobile && <Tree position={[-65, 0, 60]} scale={1.1} color="#4CAF50" />}
+      {!mobile && <Tree position={[55, 0, 80]} scale={0.8} color="#66BB6A" />}
+      {!mobile && <Tree position={[-50, 0, 90]} scale={1.4} color="#388E3C" />}
+      {!mobile && <Tree position={[0, 0, 100]} scale={1} color="#4CAF50" />}
+      {!mobile && <Tree position={[40, 0, 95]} scale={1.2} color="#66BB6A" />}
+      {!mobile && <Tree position={[-70, 0, -80]} scale={1} color="#81C784" />}
+      {!mobile && <Tree position={[70, 0, -70]} scale={0.9} color="#4CAF50" />}
 
       {/* Bushes */}
       <Bush position={[-45, 0, -20]} />
       <Bush position={[48, 0, 15]} color="#81C784" />
-      <Bush position={[-40, 0, 50]} />
-      <Bush position={[45, 0, 65]} color="#66BB6A" />
-      <Bush position={[-55, 0, -60]} color="#81C784" />
-      <Bush position={[55, 0, -55]} />
+      {!mobile && <Bush position={[-40, 0, 50]} />}
+      {!mobile && <Bush position={[45, 0, 65]} color="#66BB6A" />}
+      {!mobile && <Bush position={[-55, 0, -60]} color="#81C784" />}
+      {!mobile && <Bush position={[55, 0, -55]} />}
 
       {/* Tire stacks near the factory */}
       <TireStack position={[15, 0, -5]} />
-      <TireStack position={[16.5, 0, -5]} />
+      {!mobile && <TireStack position={[16.5, 0, -5]} />}
       <TireStack position={[-15, 0, 5]} />
 
       {/* Oil barrels — clustered */}
       <Barrel position={[18, 0, 10]} color="#4A90D9" />
-      <Barrel position={[19, 0, 9.5]} color="#4A90D9" />
       <Barrel position={[18.5, 0, 11]} color="#FF6B4A" />
-      <Barrel position={[-18, 0, -15]} color="#FFD700" />
-      <Barrel position={[-17, 0, -15.5]} color="#4A90D9" />
+      {!mobile && <Barrel position={[19, 0, 9.5]} color="#4A90D9" />}
+      {!mobile && <Barrel position={[-18, 0, -15]} color="#FFD700" />}
+      {!mobile && <Barrel position={[-17, 0, -15.5]} color="#4A90D9" />}
 
       {/* Toolboxes */}
       <Toolbox position={[12, 0, -8]} />
-      <Toolbox position={[-12, 0, 8]} />
+      {!mobile && <Toolbox position={[-12, 0, 8]} />}
 
       {/* Flags — festive! */}
       <Flag position={[-30, 0, 28]} color="#FF6B4A" />
       <Flag position={[30, 0, 28]} color="#4ECDC4" />
-      <Flag position={[-30, 0, -50]} color="#FFD700" />
-      <Flag position={[30, 0, -50]} color="#C47AFF" />
-      <Flag position={[0, 0, 80]} color="#FF6B6B" />
+      {!mobile && <Flag position={[-30, 0, -50]} color="#FFD700" />}
+      {!mobile && <Flag position={[30, 0, -50]} color="#C47AFF" />}
+      {!mobile && <Flag position={[0, 0, 80]} color="#FF6B6B" />}
 
       {/* Traffic cones — around the work area */}
       <Cone position={[-8, 0, 20]} />
       <Cone position={[8, 0, 20]} />
-      <Cone position={[-8, 0, -45]} />
-      <Cone position={[8, 0, -45]} />
-      <Cone position={[-3, 0, 25]} />
-      <Cone position={[3, 0, 25]} />
+      {!mobile && <Cone position={[-8, 0, -45]} />}
+      {!mobile && <Cone position={[8, 0, -45]} />}
+      {!mobile && <Cone position={[-3, 0, 25]} />}
+      {!mobile && <Cone position={[3, 0, 25]} />}
 
       {/* Warning lights on corners */}
       <WarningLight position={[-30, 0, 28]} />

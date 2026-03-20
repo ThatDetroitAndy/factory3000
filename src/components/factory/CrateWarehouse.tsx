@@ -3,6 +3,7 @@
 import { useRef, useMemo } from 'react'
 import * as THREE from 'three'
 import { SUBSCRIBER_COUNT } from '@/lib/constants'
+import { isMobileDevice } from '@/lib/isMobile'
 
 interface CrateWarehouseProps {
   builtCount: number
@@ -10,8 +11,9 @@ interface CrateWarehouseProps {
 
 export default function CrateWarehouse({ builtCount }: CrateWarehouseProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
+  const mobile = isMobileDevice()
   const remainingCrates = SUBSCRIBER_COUNT - builtCount
-  const VISIBLE_CRATE_COUNT = Math.min(remainingCrates, 5000)
+  const VISIBLE_CRATE_COUNT = Math.min(remainingCrates, mobile ? 800 : 5000)
   const CRATE_SIZE = 1.8
   const COLS = 40
   const ROWS_PER_STACK = 6
@@ -54,8 +56,8 @@ export default function CrateWarehouse({ builtCount }: CrateWarehouseProps) {
       <instancedMesh
         ref={meshRef}
         args={[undefined, undefined, VISIBLE_CRATE_COUNT]}
-        castShadow
-        receiveShadow
+        castShadow={!mobile}
+        receiveShadow={!mobile}
       >
         <boxGeometry args={[CRATE_SIZE, CRATE_SIZE, CRATE_SIZE]} />
         <meshStandardMaterial color={crateColor} roughness={0.85} metalness={0.05} />
