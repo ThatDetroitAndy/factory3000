@@ -21,9 +21,9 @@ export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProductio
   return (
     <>
       <div className="absolute inset-0 pointer-events-none z-10">
-        {/* Top bar */}
-        <div className="flex items-center justify-between p-4 gap-4">
-          {/* Logo / title — dark text with subtle shadow for readability on bright bg */}
+        {/* Top bar — single row on desktop, two rows on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-2 sm:gap-4">
+          {/* Logo / title */}
           <div className="pointer-events-auto drop-shadow-lg">
             <h1 className="text-3xl font-black text-white tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
               FACTORY 3000
@@ -38,7 +38,7 @@ export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProductio
             <SearchBar onFlyTo={onFlyTo} />
             <button
               onClick={() => setShowBuilder(true)}
-              className="bg-orange-500 hover:bg-orange-400 text-white font-black px-6 py-3 rounded-xl text-sm transition-colors shadow-xl uppercase tracking-wide"
+              className="bg-orange-500 hover:bg-orange-400 text-white font-black px-4 sm:px-6 py-3 rounded-xl text-sm transition-colors shadow-xl uppercase tracking-wide whitespace-nowrap"
             >
               Build Your Car
             </button>
@@ -46,7 +46,7 @@ export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProductio
         </div>
 
         {/* Bottom bar — car counter */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
+        <div className="absolute bottom-0 left-0 right-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-4">
             <div className="bg-white/90 backdrop-blur-sm rounded-xl px-5 py-3 pointer-events-auto shadow-xl">
               <div className="flex items-center gap-4">

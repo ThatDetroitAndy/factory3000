@@ -55,7 +55,7 @@ export default function SearchBar({ onFlyTo }: SearchBarProps) {
         onFocus={() => query && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
         placeholder="Search cars..."
-        className="w-48 md:w-64 px-3 py-2 bg-white/90 backdrop-blur-sm border border-zinc-200 rounded-xl text-zinc-900 text-sm placeholder-zinc-400 focus:outline-none focus:border-orange-500 shadow-lg transition-colors"
+        className="w-48 md:w-64 px-3 py-2 bg-white/90 backdrop-blur-sm border border-zinc-200 rounded-xl text-zinc-900 text-base placeholder-zinc-400 focus:outline-none focus:border-orange-500 shadow-lg transition-colors"
       />
       {open && results.length > 0 && (
         <div className="absolute top-full mt-1 w-full bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-xl">

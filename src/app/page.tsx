@@ -40,7 +40,7 @@ export default async function Home() {
   const cars = await getCars()
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-black">
+    <main className="relative w-screen h-[100dvh] overflow-hidden bg-black">
       <FactoryApp initialCars={cars} />
     </main>
   )

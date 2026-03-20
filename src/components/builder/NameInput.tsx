@@ -58,7 +58,7 @@ export default function NameInput({ value, onChange, onValidation }: NameInputPr
           onChange={(e) => onChange(e.target.value)}
           maxLength={CAR_NAME_MAX_LENGTH}
           placeholder="e.g. Lightning, Thunder, Rocket..."
-          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-orange-500 transition-colors"
+          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white text-base placeholder-white/30 focus:outline-none focus:border-orange-500 transition-colors"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {checking && (
