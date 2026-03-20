@@ -59,7 +59,7 @@ export default function EmailClaimBar() {
 
   if (status === 'sent') {
     return (
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto" style={{ bottom: 'max(5rem, calc(5rem + env(safe-area-inset-bottom)))' }}>
         <div className="bg-green-900/90 backdrop-blur-sm border border-green-500/30 rounded-xl px-5 py-3 shadow-2xl">
           <p className="text-green-300 text-sm font-medium">
             Check your email to claim Car #{carNumber}!
@@ -70,7 +70,7 @@ export default function EmailClaimBar() {
   }
 
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-sm w-full px-4">
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-sm w-full px-4" style={{ bottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom)))' }}>
       <div className="bg-white/95 backdrop-blur-sm border border-orange-200 rounded-xl px-4 py-3 shadow-2xl">
         <div className="flex items-center justify-between mb-2">
           <p className="text-zinc-900 text-sm font-bold">
@@ -92,7 +92,7 @@ export default function EmailClaimBar() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
-            className="flex-1 px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 text-sm placeholder-zinc-400 focus:outline-none focus:border-orange-500"
+            className="flex-1 px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 text-base placeholder-zinc-400 focus:outline-none focus:border-orange-500"
             onKeyDown={(e) => e.key === 'Enter' && handleClaim()}
           />
           <button

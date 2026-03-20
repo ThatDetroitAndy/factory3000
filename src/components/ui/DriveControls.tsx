@@ -57,7 +57,7 @@ export default function DriveControls({ onExit }: DriveControlsProps) {
       </div>
 
       {/* Left D-pad — movement */}
-      <div className="absolute bottom-8 left-8 pointer-events-auto">
+      <div className="absolute bottom-8 left-8 pointer-events-auto" style={{ bottom: 'max(2rem, calc(2rem + env(safe-area-inset-bottom)))' }}>
         <div className="grid grid-cols-3 gap-1 w-36">
           {/* Up */}
           <div />
@@ -92,7 +92,7 @@ export default function DriveControls({ onExit }: DriveControlsProps) {
       </div>
 
       {/* Horn button — bottom right */}
-      <div className="absolute bottom-8 right-8 pointer-events-auto">
+      <div className="absolute bottom-8 right-8 pointer-events-auto" style={{ bottom: 'max(2rem, calc(2rem + env(safe-area-inset-bottom)))' }}>
         <button
           className="bg-orange-500/80 backdrop-blur-sm border border-orange-300/50 rounded-full w-16 h-16 flex items-center justify-center text-white text-2xl font-black shadow-lg active:bg-orange-400"
           onPointerDown={() => { playHorn() }}
