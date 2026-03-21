@@ -24,8 +24,12 @@ export default function ProductionCar({ carType, color, onComplete }: Production
   const smoothLookAt = useRef(new THREE.Vector3())
 
   // Conveyor path constants
-  // Car rides on top of the belt surface (belt surface top ≈ y 1.3, car wheel bottoms at 0)
-  const BELT_Y = 1.35
+  // Belt top in world space: belt group Y(0) + BELT_HEIGHT(1.2) + half box(0.1) = 1.3
+  // Wheel bottom local offsets: car1/car2 = -0.05 (center 0.25-0.4 minus radius 0.3-0.45)
+  //                              car3      =  0.0  (center 0.5 minus radius 0.5)
+  const BELT_TOP = 1.3
+  const wheelBottomLocal = carType === 'car3' ? 0.0 : -0.05
+  const BELT_Y = BELT_TOP - wheelBottomLocal  // wheels sit flush on belt surface
   const BELT_X = 0
   const START_Z = -70
   const END_Z = 50
