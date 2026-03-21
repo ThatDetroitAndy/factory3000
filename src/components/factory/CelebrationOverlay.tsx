@@ -23,9 +23,10 @@ export default function CelebrationOverlay({ name, carNumber, position, onStartD
   const { camera } = useThree()
 
   // Smooth camera state for celebration flyback
+  // Cars face +Z, so camera goes at +Z offset (in front of car) looking back toward -Z to see the front
   const camStart = useRef(new THREE.Vector3())
-  const camTarget = useRef(new THREE.Vector3(position[0], position[1] + 10, position[2] - 18))
-  const lookTarget = useRef(new THREE.Vector3(position[0], position[1] + 5, position[2]))
+  const camTarget = useRef(new THREE.Vector3(position[0] + 6, position[1] + 8, position[2] + 16))
+  const lookTarget = useRef(new THREE.Vector3(position[0], position[1] + 3, position[2]))
   const camProgress = useRef(0)
 
   // Play fanfare once on mount, capture current camera position for smooth lerp
