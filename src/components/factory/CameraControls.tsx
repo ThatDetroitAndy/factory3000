@@ -5,6 +5,19 @@ import { useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
+type BuilderStep = 'chassis' | 'paint' | 'name'
+
+// Camera position + lookAt for each builder station (world space)
+// Follows the same side-view offset as ProductionCar: +16X, +7Y, +4Z ahead
+//   chassis → car at [0, 1.35, -40]  → cam [16, 8.35, -36], look [0, 2.55, -40]
+//   paint   → car at [0, 1.35, -20]  → cam [16, 8.35, -16], look [0, 2.55, -20]
+//   name    → car at [0, 1.35,   0]  → cam [16, 8.35,   4], look [0, 2.55,   0]
+const BUILDER_CAM: Record<BuilderStep, readonly [number, number, number, number, number, number]> = {
+  chassis: [16, 8.35, -36, 0, 2.55, -40],
+  paint:   [16, 8.35, -16, 0, 2.55, -20],
+  name:    [16, 8.35,   4, 0, 2.55,   0],
+}
+
 interface CameraControlsProps {
   /** Target position to fly to (set externally via search) */
   flyToTarget?: [number, number, number] | null
@@ -12,15 +25,26 @@ interface CameraControlsProps {
   driveMode?: boolean
   /** Whether production animation is running (disables orbit, camera controlled by ProductionCar) */
   isProducing?: boolean
+  /** Current builder station — when set, camera tracks the station */
+  builderStep?: BuilderStep | null
 }
 
-export default function CameraControls({ flyToTarget, driveMode = false, isProducing = false }: CameraControlsProps) {
+export default function CameraControls({
+  flyToTarget,
+  driveMode = false,
+  isProducing = false,
+  builderStep,
+}: CameraControlsProps) {
+  const { camera } = useThree()
   const controlsRef = useRef<any>(null)
   const isFlying = useRef(false)
   const flyProgress = useRef(0)
   const flyStart = useRef(new THREE.Vector3())
   const flyEnd = useRef(new THREE.Vector3())
   const flyTargetLookAt = useRef(new THREE.Vector3())
+
+  // Smooth lookAt vector for builder mode (avoids per-frame allocations)
+  const builderLookAt = useRef(new THREE.Vector3(0, 2.55, -40))
 
   useEffect(() => {
     if (flyToTarget && controlsRef.current) {
@@ -34,12 +58,32 @@ export default function CameraControls({ flyToTarget, driveMode = false, isProdu
   }, [flyToTarget])
 
   useFrame((_, delta) => {
+    // ── Builder camera mode ──────────────────────────────────────────────────
+    if (builderStep) {
+      const cfg = BUILDER_CAM[builderStep]
+      const [px, py, pz, lx, ly, lz] = cfg
+      const k = Math.min(1, 2.8 * delta)
+
+      // Component-wise lerp — no per-frame Vector3 allocations
+      camera.position.x += (px - camera.position.x) * k
+      camera.position.y += (py - camera.position.y) * k
+      camera.position.z += (pz - camera.position.z) * k
+
+      builderLookAt.current.x += (lx - builderLookAt.current.x) * k
+      builderLookAt.current.y += (ly - builderLookAt.current.y) * k
+      builderLookAt.current.z += (lz - builderLookAt.current.z) * k
+
+      camera.lookAt(builderLookAt.current)
+      return
+    }
+
+    // ── FlyTo animation (search result) ─────────────────────────────────────
     if (isFlying.current && controlsRef.current) {
       flyProgress.current = Math.min(flyProgress.current + delta * 0.7, 1)
       const t = easeInOutCubic(flyProgress.current)
 
-      const camera = controlsRef.current.object
-      camera.position.lerpVectors(flyStart.current, flyEnd.current, t)
+      const cam = controlsRef.current.object
+      cam.position.lerpVectors(flyStart.current, flyEnd.current, t)
       controlsRef.current.target.lerp(flyTargetLookAt.current, t * 0.8)
       controlsRef.current.update()
 
@@ -49,7 +93,7 @@ export default function CameraControls({ flyToTarget, driveMode = false, isProdu
     }
   })
 
-  if (driveMode || isProducing) return null
+  if (driveMode || isProducing || !!builderStep) return null
 
   return (
     <OrbitControls

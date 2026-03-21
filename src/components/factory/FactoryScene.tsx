@@ -16,6 +16,7 @@ import FactoryProps from './FactoryProps'
 import FactoryBuilding from './FactoryBuilding'
 import CelebrationOverlay from './CelebrationOverlay'
 import DriveMode from './DriveMode'
+import BuilderCar from './BuilderCar'
 
 export interface ProductionJob {
   carType: CarType
@@ -36,6 +37,13 @@ export interface DriveModeState {
   startPosition: [number, number, number]
 }
 
+/** Live state of the assembly line builder — drives the 3D car preview */
+export interface BuilderPreview {
+  step: 'chassis' | 'paint' | 'name'
+  carType: CarType | null
+  color: string | null
+}
+
 interface FactorySceneProps {
   cars: Car[]
   totalCarCount: number
@@ -46,6 +54,8 @@ interface FactorySceneProps {
   onStartDrive?: () => void
   driveModeState?: DriveModeState | null
   onExitDrive?: () => void
+  /** When set, shows a car on the belt at the current builder station */
+  builderPreview?: BuilderPreview | null
 }
 
 export default function FactoryScene({
@@ -58,6 +68,7 @@ export default function FactoryScene({
   onStartDrive,
   driveModeState,
   onExitDrive,
+  builderPreview,
 }: FactorySceneProps) {
   const isDriving = !!driveModeState
   const mobile = isMobileDevice()
@@ -83,6 +94,15 @@ export default function FactoryScene({
           <CrateWarehouse builtCount={totalCarCount} />
           <ParkingLot cars={cars} />
           <FactoryProps />
+
+          {/* Builder mode: live car preview on the conveyor belt */}
+          {builderPreview && !productionJob && (
+            <BuilderCar
+              step={builderPreview.step}
+              carType={builderPreview.carType}
+              color={builderPreview.color}
+            />
+          )}
 
           {productionJob && (
             <ProductionCar
@@ -115,6 +135,7 @@ export default function FactoryScene({
           flyToTarget={flyToTarget}
           isProducing={!!productionJob}
           driveMode={isDriving}
+          builderStep={builderPreview?.step ?? null}
         />
       </Canvas>
     </div>
