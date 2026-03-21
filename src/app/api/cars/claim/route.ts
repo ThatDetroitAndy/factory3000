@@ -36,9 +36,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Car is already claimed' }, { status: 409 })
   }
 
-  // Send magic link — when user clicks it, they'll be authenticated
-  // The auth callback will handle associating the user with the car
-  const anonClient = createClient(supabaseUrl, supabaseAnonKey)
+  // Send magic link with explicit implicit flow so the callback receives token_hash + type
+  // as query params (not a PKCE code). PKCE requires a code verifier stored client-side
+  // which doesn't work when the OTP is initiated server-side.
+  const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { flowType: 'implicit' },
+  })
   const { error: authError } = await anonClient.auth.signInWithOtp({
     email,
     options: {
@@ -47,6 +50,7 @@ export async function POST(request: NextRequest) {
   })
 
   if (authError) {
+    console.error('[api/cars/claim] signInWithOtp error:', authError.message)
     return NextResponse.json({ error: authError.message }, { status: 500 })
   }
 

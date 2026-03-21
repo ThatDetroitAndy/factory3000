@@ -4,21 +4,28 @@ import { useState, useEffect } from 'react'
 
 /**
  * Persistent floating bar prompting users to claim their car(s) with an email.
- * Shows whenever there's an unclaimed car number in localStorage.
+ * Shows whenever there are unclaimed car numbers in localStorage.
  * Stays visible until they either claim or explicitly dismiss.
  */
 export default function EmailClaimBar() {
-  const [carNumber, setCarNumber] = useState<number | null>(null)
-  const [allCarNumbers, setAllCarNumbers] = useState<number[]>([])
+  const [unclaimedNumbers, setUnclaimedNumbers] = useState<number[]>([])
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [dismissed, setDismissed] = useState(false)
 
   function loadCars() {
+    // Collect all unclaimed car numbers from localStorage
     const stored = localStorage.getItem('unclaimed_car')
-    if (stored) setCarNumber(parseInt(stored, 10))
-    const myCars = JSON.parse(localStorage.getItem('my_cars') || '[]')
-    setAllCarNumbers(myCars.map((c: { car_number: number }) => c.car_number))
+    const myCars: { car_number: number }[] = JSON.parse(localStorage.getItem('my_cars') || '[]')
+    const myCarsNumbers = myCars.map((c) => c.car_number)
+    // Use my_cars as the source of truth if available, else fall back to unclaimed_car
+    if (myCarsNumbers.length > 0) {
+      setUnclaimedNumbers(myCarsNumbers)
+    } else if (stored) {
+      setUnclaimedNumbers([parseInt(stored, 10)])
+    } else {
+      setUnclaimedNumbers([])
+    }
   }
 
   useEffect(() => {
@@ -38,19 +45,28 @@ export default function EmailClaimBar() {
   }, [])
 
   const handleClaim = async () => {
-    if (!email || !carNumber) return
+    if (!email || unclaimedNumbers.length === 0) return
     setStatus('sending')
+
+    // Send claim for the first (or only) unclaimed car.
+    // The magic link is per-email so the user will be authenticated and the callback
+    // will associate their account. We use the last-built car's number as the primary claim.
+    const primaryCar = unclaimedNumbers[unclaimedNumbers.length - 1]
+
     try {
       const res = await fetch('/api/cars/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, car_number: carNumber }),
+        body: JSON.stringify({ email, car_number: primaryCar }),
       })
       if (res.ok) {
         setStatus('sent')
+        // Clear unclaimed tracking — the magic link will associate them server-side
         localStorage.removeItem('unclaimed_car')
         window.dispatchEvent(new Event('claim-bar-dismissed'))
       } else {
+        const data = await res.json().catch(() => ({}))
+        console.error('[EmailClaimBar] claim error:', data)
         setStatus('error')
       }
     } catch {
@@ -58,15 +74,19 @@ export default function EmailClaimBar() {
     }
   }
 
-  if (!carNumber || dismissed) return null
+  if (unclaimedNumbers.length === 0 || dismissed) return null
 
-  const carLabel = allCarNumbers.length > 1
-    ? `Cars ${allCarNumbers.map(n => `#${n}`).join(', ')}`
-    : `Car #${carNumber}`
+  const carLabel =
+    unclaimedNumbers.length > 1
+      ? `Cars ${unclaimedNumbers.map((n) => `#${n}`).join(', ')}`
+      : `Car #${unclaimedNumbers[0]}`
 
   if (status === 'sent') {
     return (
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto" style={{ bottom: 'max(5rem, calc(5rem + env(safe-area-inset-bottom)))' }}>
+      <div
+        className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
+        style={{ bottom: 'max(5rem, calc(5rem + env(safe-area-inset-bottom)))' }}
+      >
         <div className="bg-green-900/90 backdrop-blur-sm border border-green-500/30 rounded-xl px-5 py-3 shadow-2xl">
           <p className="text-green-300 text-sm font-medium">
             Check your email to claim {carLabel}!
@@ -77,21 +97,27 @@ export default function EmailClaimBar() {
   }
 
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-sm w-full px-4" style={{ bottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom)))' }}>
+    <div
+      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-sm w-full px-4"
+      style={{ bottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom)))' }}
+    >
       <div className="bg-white/95 backdrop-blur-sm border border-orange-200 rounded-xl px-4 py-3 shadow-2xl">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-zinc-900 text-sm font-bold">
-            Save {carLabel} to your account
-          </p>
+          <p className="text-zinc-900 text-sm font-bold">Save {carLabel} to your account</p>
           <button
-            onClick={() => { setDismissed(true); window.dispatchEvent(new Event('claim-bar-dismissed')) }}
+            onClick={() => {
+              setDismissed(true)
+              window.dispatchEvent(new Event('claim-bar-dismissed'))
+            }}
             className="text-zinc-300 hover:text-zinc-500 text-lg leading-none ml-2"
           >
             &times;
           </button>
         </div>
         <p className="text-zinc-500 text-xs mb-2">
-          Enter your email to claim your {allCarNumbers.length > 1 ? 'cars' : 'car'} — come back anytime to update {allCarNumbers.length > 1 ? 'them' : 'it'} or order physical copies.
+          Enter your email to claim{' '}
+          {unclaimedNumbers.length > 1 ? 'your cars' : 'it'} — come back anytime to update{' '}
+          {unclaimedNumbers.length > 1 ? 'them' : 'it'} or order physical copies.
         </p>
         <div className="flex gap-2">
           <input
