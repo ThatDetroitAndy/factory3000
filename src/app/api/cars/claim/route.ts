@@ -51,13 +51,16 @@ export async function POST(request: NextRequest) {
   // as query params (not a PKCE code). PKCE requires a code verifier stored client-side
   // which doesn't work when the OTP is initiated server-side.
   const claimParam = unclaimedNumbers.join(',')
+  // Prefer explicit NEXT_PUBLIC_SITE_URL so the redirect always points to production,
+  // never localhost. Must also be added to Supabase's Redirect URLs allowlist.
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || request.nextUrl.origin
   const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { flowType: 'implicit' },
   })
   const { error: authError } = await anonClient.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${request.nextUrl.origin}/auth/callback?claim_cars=${claimParam}`,
+      emailRedirectTo: `${siteOrigin}/auth/callback?claim_cars=${claimParam}`,
     },
   })
 

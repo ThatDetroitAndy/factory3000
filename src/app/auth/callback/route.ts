@@ -79,14 +79,17 @@ export async function GET(request: NextRequest) {
         .in('car_number', carNumbers)
         .is('user_id', null)
 
+      const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || requestUrl.origin
+
       if (updateError) {
         console.error('[auth/callback] Failed to claim car(s):', updateError.message)
-        return NextResponse.redirect(new URL('/?claim_error=1', request.url))
+        return NextResponse.redirect(`${siteOrigin}/?claim_error=1`)
       }
 
-      return NextResponse.redirect(new URL(`/car/${carNumbers[0]}`, request.url))
+      return NextResponse.redirect(`${siteOrigin}/car/${carNumbers[0]}`)
     }
   }
 
-  return NextResponse.redirect(new URL('/', request.url))
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || requestUrl.origin
+  return NextResponse.redirect(`${siteOrigin}/`)
 }
