@@ -1042,7 +1042,9 @@ export default function CarModel({
 
   return (
     <group ref={ref} position={position} rotation={rotation} scale={scale}>
-      <CarComponent color={color} />
+      <group rotation={[0, Math.PI, 0]}>
+        <CarComponent color={color} />
+      </group>
     </group>
   )
 }
