@@ -40,15 +40,18 @@ export default function EmailClaimBar() {
   const handleClaim = async () => {
     if (!email || !carNumber) return
     setStatus('sending')
+    // Claim all cars the user has built (from my_cars), not just the latest one
+    const numbersToSend = allCarNumbers.length > 0 ? allCarNumbers : [carNumber]
     try {
       const res = await fetch('/api/cars/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, car_number: carNumber }),
+        body: JSON.stringify({ email, car_numbers: numbersToSend }),
       })
       if (res.ok) {
         setStatus('sent')
         localStorage.removeItem('unclaimed_car')
+        localStorage.removeItem('my_cars')
         window.dispatchEvent(new Event('claim-bar-dismissed'))
       } else {
         setStatus('error')

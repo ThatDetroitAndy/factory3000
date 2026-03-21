@@ -7,12 +7,14 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
   const token_hash = requestUrl.searchParams.get('token_hash')
   const type = requestUrl.searchParams.get('type')
-  const claimCar = requestUrl.searchParams.get('claim_car')
+  // Support comma-separated list of car numbers (e.g. claim_cars=42,87)
+  const claimCarsParam = requestUrl.searchParams.get('claim_cars') || requestUrl.searchParams.get('claim_car')
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY
+
+  const supabase = createClient(supabaseUrl, anonKey)
 
   let session = null
 
@@ -24,23 +26,36 @@ export async function GET(request: NextRequest) {
     session = data.session
   }
 
-  // If this is a car claim callback, associate the user with the car
-  if (claimCar && session?.user) {
-    const carNumber = parseInt(claimCar, 10)
-    if (!isNaN(carNumber)) {
-      const serviceClient = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
+  // If this is a car claim callback, associate the user with their car(s)
+  if (claimCarsParam && session?.user) {
+    const carNumbers = claimCarsParam
+      .split(',')
+      .map((n) => parseInt(n.trim(), 10))
+      .filter((n) => !isNaN(n))
 
-      // Only claim if the car is still unclaimed
-      await serviceClient
+    if (carNumbers.length > 0) {
+      // Prefer service key (bypasses RLS). If not set, use user's own JWT so RLS
+      // policy "allow claim where user_id IS NULL" can permit the update.
+      const updateClient = serviceKey
+        ? createClient(supabaseUrl, serviceKey)
+        : createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+          })
+
+      const { error } = await updateClient
         .from('cars')
         .update({ user_id: session.user.id })
-        .eq('car_number', carNumber)
+        .in('car_number', carNumbers)
         .is('user_id', null)
 
-      return NextResponse.redirect(new URL(`/car/${carNumber}`, request.url))
+      if (error) {
+        console.error('[auth/callback] Failed to claim car(s):', error.message)
+        // Redirect home with an error flag so the UI can show a message
+        return NextResponse.redirect(new URL('/?claim_error=1', request.url))
+      }
+
+      // Redirect to the first car's page
+      return NextResponse.redirect(new URL(`/car/${carNumbers[0]}`, request.url))
     }
   }
 
