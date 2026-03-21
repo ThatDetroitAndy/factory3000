@@ -82,8 +82,19 @@ export default function MyCarsPanel({ onFlyTo, isDriving, onSwitchDrive }: MyCar
                     <p className="text-zinc-400 text-xs">#{car.car_number}</p>
                   </div>
 
-                  {/* Action button */}
-                  {isDriving ? (
+                  {/* Action buttons — always show both View and Drive */}
+                  <div className="flex gap-1 flex-shrink-0">
+                    {!isDriving && (
+                      <button
+                        onClick={() => {
+                          onFlyTo([car.parked_x || 0, 0, car.parked_z || 30])
+                          setOpen(false)
+                        }}
+                        className="text-xs font-bold text-zinc-500 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
+                      >
+                        View
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         onSwitchDrive({
@@ -93,21 +104,11 @@ export default function MyCarsPanel({ onFlyTo, isDriving, onSwitchDrive }: MyCar
                         })
                         setOpen(false)
                       }}
-                      className="flex-shrink-0 text-xs font-bold text-orange-500 hover:text-orange-400 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
+                      className="text-xs font-bold text-orange-500 hover:text-orange-400 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
                     >
                       Drive
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        onFlyTo([car.parked_x || 0, 0, car.parked_z || 30])
-                        setOpen(false)
-                      }}
-                      className="flex-shrink-0 text-xs font-bold text-orange-500 hover:text-orange-400 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Fly to
-                    </button>
-                  )}
+                  </div>
                 </div>
               </li>
             ))}
