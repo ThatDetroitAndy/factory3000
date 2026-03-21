@@ -37,11 +37,6 @@ function Wheel({
         <cylinderGeometry args={[r, r, w, 20]} />
         <meshStandardMaterial color="#181818" roughness={0.92} />
       </mesh>
-      {/* Sidewall bead ring */}
-      <mesh rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[r * 0.87, r * 0.045, 6, 20]} />
-        <meshStandardMaterial color="#111111" roughness={0.9} />
-      </mesh>
       {/* Rim barrel */}
       <mesh rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[r * 0.67, r * 0.67, w * 0.78, 20]} />
@@ -1051,9 +1046,7 @@ export default function CarModel({
 
   return (
     <group ref={ref} position={position} rotation={rotation} scale={scale}>
-      <group rotation={[0, Math.PI, 0]}>
-        <CarComponent color={color} />
-      </group>
+      <CarComponent color={color} />
     </group>
   )
 }

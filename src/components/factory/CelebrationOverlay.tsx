@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Html, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { playFanfare } from '@/lib/sounds'
@@ -20,14 +20,32 @@ interface CelebrationOverlayProps {
 export default function CelebrationOverlay({ name, carNumber, position, onStartDrive }: CelebrationOverlayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const time = useRef(0)
+  const { camera } = useThree()
 
-  // Play fanfare once on mount
+  // Smooth camera state for celebration flyback
+  const camStart = useRef(new THREE.Vector3())
+  const camTarget = useRef(new THREE.Vector3(position[0], position[1] + 10, position[2] - 18))
+  const lookTarget = useRef(new THREE.Vector3(position[0], position[1] + 5, position[2]))
+  const camProgress = useRef(0)
+
+  // Play fanfare once on mount, capture current camera position for smooth lerp
   useEffect(() => {
     playFanfare()
-  }, [])
+    camStart.current.copy(camera.position)
+    camProgress.current = 0
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, delta) => {
     time.current += delta
+
+    // Smoothly fly camera to face the car + celebration
+    if (camProgress.current < 1) {
+      camProgress.current = Math.min(camProgress.current + delta * 0.8, 1)
+      const t = camProgress.current * camProgress.current * (3 - 2 * camProgress.current) // smoothstep
+      camera.position.lerpVectors(camStart.current, camTarget.current, t)
+      camera.lookAt(lookTarget.current)
+    }
+
     if (groupRef.current) {
       // Gentle float animation
       groupRef.current.position.y = position[1] + 5 + Math.sin(time.current * 2) * 0.3
