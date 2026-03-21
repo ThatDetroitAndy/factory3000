@@ -35,6 +35,7 @@ export interface DriveModeState {
   carType: CarType
   color: string
   startPosition: [number, number, number]
+  carNumber?: number | null
 }
 
 /** Live state of the assembly line builder — drives the 3D car preview */
@@ -92,7 +93,7 @@ export default function FactoryScene({
           <FactoryBuilding />
           <ConveyorBelt />
           <CrateWarehouse builtCount={totalCarCount} />
-          <ParkingLot cars={cars} />
+          <ParkingLot cars={cars} drivenCarNumber={driveModeState?.carNumber ?? null} />
           <FactoryProps />
 
           {/* Builder mode: live car preview on the conveyor belt */}

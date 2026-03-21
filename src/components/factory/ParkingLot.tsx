@@ -8,6 +8,7 @@ import { isMobileDevice } from '@/lib/isMobile'
 
 interface ParkingLotProps {
   cars: Car[]
+  drivenCarNumber?: number | null
 }
 
 function getGridPosition(index: number): [number, number, number] {
@@ -20,7 +21,7 @@ function getGridPosition(index: number): [number, number, number] {
 
 const MOBILE_NAME_TAG_LIMIT = 20
 
-export default function ParkingLot({ cars }: ParkingLotProps) {
+export default function ParkingLot({ cars, drivenCarNumber }: ParkingLotProps) {
   const mobile = isMobileDevice()
 
   return (
@@ -47,7 +48,7 @@ export default function ParkingLot({ cars }: ParkingLotProps) {
       </mesh>
 
       {/* Cars — slightly scaled up for visibility */}
-      {cars.map((car, i) => {
+      {cars.filter(car => car.car_number !== drivenCarNumber).map((car, i) => {
         const hasCustomPosition = car.parked_x !== 0 || car.parked_z !== 0
         const position: [number, number, number] = hasCustomPosition
           ? [car.parked_x, 0, car.parked_z]

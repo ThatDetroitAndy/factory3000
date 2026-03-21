@@ -110,6 +110,7 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
       carType: celebration.carType,
       color: celebration.color,
       startPosition: celebration.position,
+      carNumber: celebration.carNumber,
     })
     setCelebration(null)
   }, [celebration])

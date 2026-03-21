@@ -90,6 +90,7 @@ export default function MyCarsPanel({ onFlyTo, isDriving, onSwitchDrive }: MyCar
                           carType: car.car_type,
                           color: car.color,
                           startPosition: [car.parked_x || 0, 0, car.parked_z || 30],
+                          carNumber: car.car_number,
                         })
                         setOpen(false)
                       }}

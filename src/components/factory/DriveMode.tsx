@@ -136,7 +136,7 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
 
   return (
     <group ref={groupRef} position={startPosition}>
-      <CarModel carType={carType} color={color} />
+      <CarModel carType={carType} color={color} scale={1.3} />
     </group>
   )
 }
