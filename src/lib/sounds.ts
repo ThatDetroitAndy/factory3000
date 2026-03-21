@@ -179,21 +179,72 @@ export function stopEngine(): void {
 }
 
 // ── Horn ─────────────────────────────────────────────────────────────────────
+// Two-tone "beep-beep!" — two detuned sawtooth oscillators through a bandpass
+// filter for that classic reedy car-horn timbre. Each honk has a slight upward
+// pitch slide for a cartoony "squeezy" feel. Second honk is a step higher.
 export function playHorn(): void {
   try {
     const c = getCtx()
-    const t = c.currentTime
-    const osc = c.createOscillator()
-    const gain = c.createGain()
-    osc.type = 'square'
-    osc.frequency.value = 440
-    gain.gain.setValueAtTime(0.18, t)
-    gain.gain.setValueAtTime(0.18, t + 0.25)
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35)
-    osc.connect(gain)
-    gain.connect(c.destination)
-    osc.start(t)
-    osc.stop(t + 0.4)
+
+    function honk(startTime: number, baseFreq: number) {
+      // Bandpass filter shapes the raw sawtooth into a nasal horn tone
+      const filter = c.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = baseFreq * 1.8
+      filter.Q.value = 2.5
+
+      const masterGain = c.createGain()
+      // Punchy attack → short sustain → snappy decay
+      masterGain.gain.setValueAtTime(0, startTime)
+      masterGain.gain.linearRampToValueAtTime(0.32, startTime + 0.012)
+      masterGain.gain.setValueAtTime(0.30, startTime + 0.18)
+      masterGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.30)
+
+      filter.connect(masterGain)
+      masterGain.connect(c.destination)
+
+      // Osc 1: slides up from slightly flat → adds cartoon "squeak" feel
+      const o1 = c.createOscillator()
+      o1.type = 'sawtooth'
+      o1.frequency.setValueAtTime(baseFreq * 0.94, startTime)
+      o1.frequency.linearRampToValueAtTime(baseFreq, startTime + 0.025)
+      const g1 = c.createGain()
+      g1.gain.value = 0.58
+      o1.connect(g1)
+      g1.connect(filter)
+      o1.start(startTime)
+      o1.stop(startTime + 0.38)
+
+      // Osc 2: slightly sharp detune — creates beating/chorus richness
+      const o2 = c.createOscillator()
+      o2.type = 'sawtooth'
+      o2.frequency.setValueAtTime(baseFreq * 0.97, startTime)
+      o2.frequency.linearRampToValueAtTime(baseFreq * 1.014, startTime + 0.025)
+      const g2 = c.createGain()
+      g2.gain.value = 0.42
+      o2.connect(g2)
+      g2.connect(filter)
+      o2.start(startTime)
+      o2.stop(startTime + 0.38)
+
+      // Sub-octave body — adds weight so it sounds like a real horn, not a toy beep
+      const sub = c.createOscillator()
+      sub.type = 'sine'
+      sub.frequency.value = baseFreq * 0.5
+      const subGain = c.createGain()
+      subGain.gain.setValueAtTime(0, startTime)
+      subGain.gain.linearRampToValueAtTime(0.12, startTime + 0.015)
+      subGain.gain.setValueAtTime(0.10, startTime + 0.18)
+      subGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.30)
+      sub.connect(subGain)
+      subGain.connect(c.destination)
+      sub.start(startTime)
+      sub.stop(startTime + 0.38)
+    }
+
+    // "Beep — BEEP!" — first honk at A4 area, second a minor third higher
+    honk(c.currentTime, 415)
+    honk(c.currentTime + 0.33, 494)
   } catch { /* ignore */ }
 }
 
