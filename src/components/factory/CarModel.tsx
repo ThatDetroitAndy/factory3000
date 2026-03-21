@@ -47,10 +47,10 @@ function Wheel({
         <cylinderGeometry args={[r * 0.67, r * 0.67, w * 0.78, 20]} />
         <meshStandardMaterial color={rimColor} metalness={0.88} roughness={0.1} />
       </mesh>
-      {/* Spokes — rotate each around wheel axis (X) */}
+      {/* Spokes — rotate each around wheel axis (X), thin in axial direction */}
       {Array.from({ length: spokes }, (_, i) => (
         <mesh key={i} rotation={[(i * Math.PI * 2) / spokes, 0, 0]}>
-          <boxGeometry args={[w * 0.58, r * 1.25, 0.055]} />
+          <boxGeometry args={[0.05, r * 1.25, 0.07]} />
           <meshStandardMaterial color={rimColor} metalness={0.88} roughness={0.1} />
         </mesh>
       ))}
@@ -239,22 +239,22 @@ function Car1({ color }: { color: string }) {
         <boxGeometry args={[0.54, 0.4, 0.1]} />
         <meshStandardMaterial color="#0a0a0a" roughness={0.9} />
       </mesh>
-      {/* Head rest — red accent */}
+      {/* Head rest */}
       <mesh position={[0, 1.0, -0.72]}>
         <boxGeometry args={[0.28, 0.22, 0.16]} />
-        <meshStandardMaterial color="#cc0000" roughness={0.7} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.8} />
       </mesh>
-      {/* Steering wheel */}
-      <mesh position={[0, 0.6, 0.34]} rotation={[Math.PI / 3.2, 0, 0]}>
+      {/* Steering wheel — centered in cockpit, in front of driver */}
+      <mesh position={[0, 0.57, 0.12]} rotation={[Math.PI / 3.2, 0, 0]}>
         <torusGeometry args={[0.19, 0.028, 8, 18]} />
         <meshStandardMaterial color="#111111" roughness={0.75} />
       </mesh>
-      <mesh position={[0, 0.6, 0.34]} rotation={[Math.PI / 3.2, 0, 0]}>
+      <mesh position={[0, 0.57, 0.12]} rotation={[Math.PI / 3.2, 0, 0]}>
         <cylinderGeometry args={[0.042, 0.042, 0.04, 8]} />
-        <meshStandardMaterial color="#cc2222" roughness={0.4} />
+        <meshStandardMaterial color="#222222" roughness={0.5} />
       </mesh>
       {/* Steering column */}
-      <mesh position={[0, 0.46, 0.24]} rotation={[Math.PI / 3.2, 0, 0]}>
+      <mesh position={[0, 0.44, 0.02]} rotation={[Math.PI / 3.2, 0, 0]}>
         <cylinderGeometry args={[0.025, 0.025, 0.3, 6]} />
         <meshStandardMaterial color="#444" metalness={0.6} roughness={0.3} />
       </mesh>
@@ -262,6 +262,15 @@ function Car1({ color }: { color: string }) {
       {/* ── ROLL HOOP ── */}
       <mesh position={[0, 0.84, -0.46]} castShadow>
         <torusGeometry args={[0.44, 0.05, 8, 18, Math.PI]} />
+        <meshStandardMaterial color="#333333" metalness={0.78} roughness={0.18} />
+      </mesh>
+      {/* Roll hoop support legs — connect hoop feet to body */}
+      <mesh position={[-0.44, 0.64, -0.46]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.42, 8]} />
+        <meshStandardMaterial color="#333333" metalness={0.78} roughness={0.18} />
+      </mesh>
+      <mesh position={[0.44, 0.64, -0.46]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.42, 8]} />
         <meshStandardMaterial color="#333333" metalness={0.78} roughness={0.18} />
       </mesh>
       {/* Hoop cross brace */}

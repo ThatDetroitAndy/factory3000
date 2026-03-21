@@ -112,7 +112,7 @@ export default function BuilderCar({ step, carType, color }: BuilderCarProps) {
           carType={carType}
           color={displayColor}
           position={[0, 0, 0]}
-          rotation={[0, Math.PI, 0]}
+          rotation={[0, 0, 0]}
         />
       )}
     </group>
