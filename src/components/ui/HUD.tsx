@@ -13,9 +13,11 @@ interface HUDProps {
   onStartProduction: (job: ProductionJob) => void
   onCelebrate: (state: CelebrationState) => void
   hideCounter?: boolean
+  myCarsCount: number
+  onMyCarsClick: () => void
 }
 
-export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProduction, onCelebrate, hideCounter }: HUDProps) {
+export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProduction, onCelebrate, hideCounter, myCarsCount, onMyCarsClick }: HUDProps) {
   const [showBuilder, setShowBuilder] = useState(false)
   const remaining = SUBSCRIBER_COUNT - carCount
 
@@ -48,7 +50,7 @@ export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProductio
 
         {/* Bottom bar — car counter (hidden on mobile when claim bar is visible to avoid overlap) */}
         <div className={`absolute bottom-0 left-0 right-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] ${hideCounter ? 'hidden sm:block' : ''}`}>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="bg-white/90 backdrop-blur-sm rounded-xl px-5 py-3 pointer-events-auto shadow-xl">
               <div className="flex items-center gap-4">
                 <div>
@@ -73,6 +75,19 @@ export default function HUD({ carCount, onFlyTo, onCarsChanged, onStartProductio
                 />
               </div>
             </div>
+
+            {/* My Cars button — only shown when user has built cars */}
+            {myCarsCount > 0 && (
+              <button
+                onClick={onMyCarsClick}
+                className="relative bg-zinc-900/90 backdrop-blur-sm hover:bg-zinc-800/90 text-white font-black px-4 py-3 rounded-xl text-sm transition-colors shadow-xl uppercase tracking-wide pointer-events-auto whitespace-nowrap border border-white/10"
+              >
+                My Cars
+                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-xs font-black rounded-full w-5 h-5 flex items-center justify-center leading-none">
+                  {myCarsCount > 9 ? '9+' : myCarsCount}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>

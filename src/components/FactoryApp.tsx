@@ -6,7 +6,8 @@ import type { ProductionJob, CelebrationState, DriveModeState } from '@/componen
 import HUD from '@/components/ui/HUD'
 import EmailClaimBar from '@/components/ui/EmailClaimBar'
 import DriveControls from '@/components/ui/DriveControls'
-import type { Car } from '@/lib/types'
+import MyCarsPanel from '@/components/ui/MyCarsPanel'
+import type { Car, CarType } from '@/lib/types'
 
 interface FactoryAppProps {
   initialCars: Car[]
@@ -19,16 +20,26 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
   const [driveModeState, setDriveModeState] = useState<DriveModeState | null>(null)
   const [claimBarVisible, setClaimBarVisible] = useState(false)
+  const [myCarsCount, setMyCarsCount] = useState(0)
+  const [showMyCars, setShowMyCars] = useState(false)
 
-  // Track whether the EmailClaimBar is showing so we can hide the HUD counter to avoid overlap
+  // Track claim bar visibility and my cars count from localStorage
   useEffect(() => {
-    setClaimBarVisible(!!localStorage.getItem('unclaimed_car'))
-    const handler = () => setClaimBarVisible(!!localStorage.getItem('unclaimed_car'))
-    window.addEventListener('car-built', handler)
-    window.addEventListener('claim-bar-dismissed', handler)
+    const syncState = () => {
+      setClaimBarVisible(!!localStorage.getItem('unclaimed_car'))
+      try {
+        const stored = localStorage.getItem('my_cars')
+        setMyCarsCount(stored ? JSON.parse(stored).length : 0)
+      } catch {
+        setMyCarsCount(0)
+      }
+    }
+    syncState()
+    window.addEventListener('car-built', syncState)
+    window.addEventListener('claim-bar-dismissed', syncState)
     return () => {
-      window.removeEventListener('car-built', handler)
-      window.removeEventListener('claim-bar-dismissed', handler)
+      window.removeEventListener('car-built', syncState)
+      window.removeEventListener('claim-bar-dismissed', syncState)
     }
   }, [])
 
@@ -78,6 +89,12 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
     setDriveModeState(null)
   }, [])
 
+  const handleDriveFromPanel = useCallback((carType: CarType, color: string, position: [number, number, number]) => {
+    setDriveModeState({ carType, color, startPosition: position })
+    setCelebration(null)
+    setShowMyCars(false)
+  }, [])
+
   const isDriving = !!driveModeState
 
   return (
@@ -100,10 +117,20 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
           onStartProduction={handleStartProduction}
           onCelebrate={handleCelebrate}
           hideCounter={claimBarVisible}
+          myCarsCount={myCarsCount}
+          onMyCarsClick={() => setShowMyCars(prev => !prev)}
         />
       )}
       {isDriving && <DriveControls onExit={handleExitDrive} />}
       {!isDriving && <EmailClaimBar />}
+      {!isDriving && showMyCars && (
+        <MyCarsPanel
+          allCars={cars}
+          onFlyTo={handleFlyTo}
+          onDrive={handleDriveFromPanel}
+          onClose={() => setShowMyCars(false)}
+        />
+      )}
     </>
   )
 }

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import TypePicker from './TypePicker'
 import ColorPicker from './ColorPicker'
 import NameInput from './NameInput'
-import type { CarType } from '@/lib/types'
+import type { CarType, Car } from '@/lib/types'
 import type { ProductionJob, CelebrationState } from '@/components/factory/FactoryScene'
 
 interface CarBuilderProps {
@@ -49,9 +49,15 @@ export default function CarBuilder({ onClose, onStartProduction, onCarsChanged, 
         return
       }
 
-      const newCarNumber = data.car.car_number
+      const newCar: Car = data.car
+      const newCarNumber = newCar.car_number
 
-      // Store as unclaimed for the persistent email bar
+      // Store in my_cars array (newest first) for the My Cars panel
+      const storedCars: Car[] = JSON.parse(localStorage.getItem('my_cars') || '[]')
+      storedCars.unshift(newCar)
+      localStorage.setItem('my_cars', JSON.stringify(storedCars))
+
+      // Also keep the legacy unclaimed_car key for EmailClaimBar
       localStorage.setItem('unclaimed_car', String(newCarNumber))
       window.dispatchEvent(new Event('car-built'))
 

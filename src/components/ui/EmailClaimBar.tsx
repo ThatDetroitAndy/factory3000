@@ -3,33 +3,41 @@
 import { useState, useEffect } from 'react'
 
 /**
- * Persistent floating bar prompting users to claim their car with an email.
- * Shows whenever there's an unclaimed car number in localStorage.
+ * Persistent floating bar prompting users to claim their car(s) with an email.
+ * Shows whenever there are unclaimed car numbers in localStorage.
  * Stays visible until they either claim or explicitly dismiss.
  */
 export default function EmailClaimBar() {
   const [carNumber, setCarNumber] = useState<number | null>(null)
+  const [totalCars, setTotalCars] = useState(0)
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [dismissed, setDismissed] = useState(false)
 
-  useEffect(() => {
+  const syncFromStorage = () => {
     const stored = localStorage.getItem('unclaimed_car')
     if (stored) {
       setCarNumber(parseInt(stored, 10))
     }
+    try {
+      const myCars = JSON.parse(localStorage.getItem('my_cars') || '[]')
+      setTotalCars(myCars.length)
+    } catch {
+      setTotalCars(stored ? 1 : 0)
+    }
+  }
+
+  useEffect(() => {
+    syncFromStorage()
   }, [])
 
   // Listen for new unclaimed cars (set by CarBuilder)
   useEffect(() => {
     const handler = () => {
-      const stored = localStorage.getItem('unclaimed_car')
-      if (stored) {
-        setCarNumber(parseInt(stored, 10))
-        setDismissed(false)
-        setStatus('idle')
-        setEmail('')
-      }
+      syncFromStorage()
+      setDismissed(false)
+      setStatus('idle')
+      setEmail('')
     }
     window.addEventListener('car-built', handler)
     return () => window.removeEventListener('car-built', handler)
@@ -70,12 +78,16 @@ export default function EmailClaimBar() {
     )
   }
 
+  const headline = totalCars > 1
+    ? `You built ${totalCars} cars! Save them with your email`
+    : `Save Car #${carNumber} to your account`
+
   return (
     <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-sm w-full px-4" style={{ bottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom)))' }}>
       <div className="bg-white/95 backdrop-blur-sm border border-orange-200 rounded-xl px-4 py-3 shadow-2xl">
         <div className="flex items-center justify-between mb-2">
           <p className="text-zinc-900 text-sm font-bold">
-            Save Car #{carNumber} to your account
+            {headline}
           </p>
           <button
             onClick={() => { setDismissed(true); window.dispatchEvent(new Event('claim-bar-dismissed')) }}
