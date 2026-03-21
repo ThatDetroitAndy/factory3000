@@ -53,6 +53,20 @@ export default function CarBuilder({ onClose, onStartProduction, onCarsChanged, 
 
       // Store as unclaimed for the persistent email bar
       localStorage.setItem('unclaimed_car', String(newCarNumber))
+
+      // Store full car data for My Cars panel
+      const myCars = JSON.parse(localStorage.getItem('my_cars') || '[]')
+      myCars.push({
+        car_number: data.car.car_number,
+        name: data.car.name,
+        car_type: data.car.car_type,
+        color: data.car.color,
+        parked_x: data.car.parked_x ?? 0,
+        parked_z: data.car.parked_z ?? 0,
+        parked_rotation: data.car.parked_rotation ?? 0,
+      })
+      localStorage.setItem('my_cars', JSON.stringify(myCars))
+
       window.dispatchEvent(new Event('car-built'))
 
       // Wait for the 3D production animation to finish
