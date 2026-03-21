@@ -15,7 +15,7 @@ function getGridPosition(index: number): [number, number, number] {
   const row = Math.floor(index / PARKING_COLS)
   const col = index % PARKING_COLS
   const x = col * PARKING_SPACING - (PARKING_COLS * PARKING_SPACING) / 2
-  const z = row * PARKING_SPACING + 30 // closer to factory center
+  const z = row * PARKING_SPACING + 50 // buffer zone: belt exit is ~Z=25, first row at Z=50
   return [x, 0, z]
 }
 
@@ -42,7 +42,7 @@ export default function ParkingLot({ cars, drivenCarNumber }: ParkingLotProps) {
       </mesh>
 
       {/* Parking lot border stripes */}
-      <mesh position={[0, 0.05, 48]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.05, 47]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[PARKING_COLS * PARKING_SPACING + 20, 0.5]} />
         <meshStandardMaterial color="#FFD700" />
       </mesh>
