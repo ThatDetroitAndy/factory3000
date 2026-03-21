@@ -38,6 +38,7 @@ export interface DriveModeState {
 
 interface FactorySceneProps {
   cars: Car[]
+  totalCarCount: number
   flyToTarget?: [number, number, number] | null
   productionJob?: ProductionJob | null
   onProductionComplete?: () => void
@@ -49,6 +50,7 @@ interface FactorySceneProps {
 
 export default function FactoryScene({
   cars,
+  totalCarCount,
   flyToTarget,
   productionJob,
   onProductionComplete,
@@ -78,7 +80,7 @@ export default function FactoryScene({
           <FactoryFloor />
           <FactoryBuilding />
           <ConveyorBelt />
-          <CrateWarehouse builtCount={cars.length} />
+          <CrateWarehouse builtCount={totalCarCount} />
           <ParkingLot cars={cars} />
           <FactoryProps />
 

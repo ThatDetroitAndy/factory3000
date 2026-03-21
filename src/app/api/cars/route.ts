@@ -10,10 +10,36 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const VALID_CAR_TYPES = ['car1', 'car2', 'car3']
 const VALID_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E86E', '#C47AFF', '#FFA07A', '#FF9FF3', '#F0F0F0']
 
-// GET — list all cars (public)
-export async function GET() {
+// GET — list cars or just the count
+// ?count=true → returns { count: number } only (no car data)
+// ?numbers=1,2,3 → returns specific cars by car_number
+// (no params) → returns all cars (kept for SearchBar / legacy use)
+export async function GET(request: NextRequest) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  const { searchParams } = new URL(request.url)
 
+  // Count-only mode — cheap query for HUD counter
+  if (searchParams.get('count') === 'true') {
+    const { count, error } = await supabase
+      .from('cars')
+      .select('*', { count: 'exact', head: true })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ count })
+  }
+
+  // Fetch specific cars by car_number list (for loading my_cars from DB)
+  const numbersParam = searchParams.get('numbers')
+  if (numbersParam) {
+    const numbers = numbersParam.split(',').map(Number).filter(Boolean)
+    const { data, error } = await supabase
+      .from('cars')
+      .select('id, car_number, name, car_type, color, parked_x, parked_z, parked_rotation, created_at')
+      .in('car_number', numbers)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ cars: data })
+  }
+
+  // Full list — still available for search etc.
   const { data, error } = await supabase
     .from('cars')
     .select('id, car_number, name, car_type, color, parked_x, parked_z, parked_rotation, created_at')
