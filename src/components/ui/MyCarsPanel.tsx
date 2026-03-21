@@ -87,7 +87,7 @@ export default function MyCarsPanel({ onFlyTo, isDriving, onSwitchDrive }: MyCar
                     {!isDriving && (
                       <button
                         onClick={() => {
-                          onFlyTo([car.parked_x || 0, 0, car.parked_z || 30])
+                          onFlyTo([car.parked_x, 0, car.parked_z])
                           setOpen(false)
                         }}
                         className="text-xs font-bold text-zinc-500 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
@@ -100,7 +100,7 @@ export default function MyCarsPanel({ onFlyTo, isDriving, onSwitchDrive }: MyCar
                         onSwitchDrive({
                           carType: car.car_type,
                           color: car.color,
-                          startPosition: [car.parked_x || 0, 0, car.parked_z || 30],
+                          startPosition: [car.parked_x, 0, car.parked_z],
                           carNumber: car.car_number,
                         })
                         setOpen(false)
