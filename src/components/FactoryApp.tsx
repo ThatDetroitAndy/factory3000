@@ -6,6 +6,7 @@ import type { ProductionJob, CelebrationState, DriveModeState } from '@/componen
 import HUD from '@/components/ui/HUD'
 import EmailClaimBar from '@/components/ui/EmailClaimBar'
 import DriveControls from '@/components/ui/DriveControls'
+import MyCarsPanel from '@/components/ui/MyCarsPanel'
 import type { Car } from '@/lib/types'
 
 interface FactoryAppProps {
@@ -78,6 +79,12 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
     setDriveModeState(null)
   }, [])
 
+  const handleSwitchDrive = useCallback((state: DriveModeState) => {
+    setDriveModeState(null)
+    // Small timeout so DriveMode unmounts + remounts fresh with new car
+    setTimeout(() => setDriveModeState(state), 50)
+  }, [])
+
   const isDriving = !!driveModeState
 
   return (
@@ -104,6 +111,13 @@ export default function FactoryApp({ initialCars }: FactoryAppProps) {
       )}
       {isDriving && <DriveControls onExit={handleExitDrive} />}
       {!isDriving && <EmailClaimBar />}
+      {!productionJob && (
+        <MyCarsPanel
+          onFlyTo={handleFlyTo}
+          isDriving={isDriving}
+          onSwitchDrive={handleSwitchDrive}
+        />
+      )}
     </>
   )
 }
