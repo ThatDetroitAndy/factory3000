@@ -9,7 +9,12 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
   const token_hash = requestUrl.searchParams.get('token_hash')
   const type = requestUrl.searchParams.get('type')
-  const claimCar = requestUrl.searchParams.get('claim_car')
+  // Support comma-separated list of car numbers (e.g. claim_cars=42,87)
+  const claimCarsParam = requestUrl.searchParams.get('claim_cars') || requestUrl.searchParams.get('claim_car')
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY
 
   const cookieStore = await cookies()
 
@@ -17,8 +22,8 @@ export async function GET(request: NextRequest) {
   // This is required for PKCE flow (exchangeCodeForSession needs the code verifier
   // which is stored in a cookie by the client that initiated the OTP).
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    anonKey,
     {
       cookies: {
         getAll() {
@@ -51,35 +56,35 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Associate the user with their car
-  if (claimCar && session?.user) {
-    const carNumber = parseInt(claimCar, 10)
-    if (!isNaN(carNumber)) {
-      const serviceKey = process.env.SUPABASE_SERVICE_KEY
-      if (!serviceKey) {
-        // Without service key we can't bypass the RLS "user_id = auth.uid()" policy
-        // on unclaimed cars (user_id IS NULL). Log loudly so it shows in Vercel logs.
-        console.error(
-          '[auth/callback] SUPABASE_SERVICE_KEY is not set — cannot claim car. ' +
-          'Add SUPABASE_SERVICE_KEY to Vercel environment variables.'
-        )
-      } else {
-        const serviceClient = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          serviceKey
-        )
-        const { error: updateError } = await serviceClient
-          .from('cars')
-          .update({ user_id: session.user.id })
-          .eq('car_number', carNumber)
-          .is('user_id', null)
+  // Associate the user with their car(s)
+  if (claimCarsParam && session?.user) {
+    const carNumbers = claimCarsParam
+      .split(',')
+      .map((n) => parseInt(n.trim(), 10))
+      .filter((n) => !isNaN(n))
 
-        if (updateError) {
-          console.error('[auth/callback] Failed to claim car:', updateError.message)
-        }
+    if (carNumbers.length > 0) {
+      // Prefer service key (bypasses RLS entirely). If not set, fall back to the
+      // user's own JWT — works once the RLS policy in supabase/fix_claim_rls.sql
+      // is applied (allows authenticated users to claim cars where user_id IS NULL).
+      const updateClient = serviceKey
+        ? createClient(supabaseUrl, serviceKey)
+        : createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+          })
+
+      const { error: updateError } = await updateClient
+        .from('cars')
+        .update({ user_id: session.user.id })
+        .in('car_number', carNumbers)
+        .is('user_id', null)
+
+      if (updateError) {
+        console.error('[auth/callback] Failed to claim car(s):', updateError.message)
+        return NextResponse.redirect(new URL('/?claim_error=1', request.url))
       }
 
-      return NextResponse.redirect(new URL(`/car/${carNumber}`, request.url))
+      return NextResponse.redirect(new URL(`/car/${carNumbers[0]}`, request.url))
     }
   }
 

@@ -9,43 +9,55 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 /**
  * POST /api/cars/claim
  * Sends a magic link to the user's email. When they click it and come back,
- * we'll associate their auth user_id with their car.
- * Body: { email: string, car_number: number }
+ * we'll associate their auth user_id with their car(s).
+ * Body: { email: string, car_numbers: number[] }
+ *   OR: { email: string, car_number: number }  (legacy single-car form)
  */
 export async function POST(request: NextRequest) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey)
   const body = await request.json()
-  const { email, car_number } = body
+  const { email } = body
 
-  if (!email || !car_number) {
-    return NextResponse.json({ error: 'Email and car number are required' }, { status: 400 })
+  // Accept both car_numbers (array) and car_number (single, legacy)
+  const carNumbers: number[] = Array.isArray(body.car_numbers)
+    ? body.car_numbers
+    : body.car_number
+    ? [Number(body.car_number)]
+    : []
+
+  if (!email || carNumbers.length === 0) {
+    return NextResponse.json({ error: 'Email and at least one car number are required' }, { status: 400 })
   }
 
-  // Verify the car exists and is unclaimed
-  const { data: car, error: carError } = await supabase
+  // Verify all requested cars exist; skip already-claimed ones (don't error on them)
+  const { data: cars, error: carsError } = await supabase
     .from('cars')
-    .select('id, user_id')
-    .eq('car_number', car_number)
-    .single()
+    .select('id, car_number, user_id')
+    .in('car_number', carNumbers)
 
-  if (carError || !car) {
-    return NextResponse.json({ error: 'Car not found' }, { status: 404 })
+  if (carsError) {
+    return NextResponse.json({ error: 'Failed to look up cars' }, { status: 500 })
   }
 
-  if (car.user_id) {
-    return NextResponse.json({ error: 'Car is already claimed' }, { status: 409 })
+  const unclaimedNumbers = (cars ?? [])
+    .filter((c) => !c.user_id)
+    .map((c) => c.car_number as number)
+
+  if (unclaimedNumbers.length === 0) {
+    return NextResponse.json({ error: 'All specified cars are already claimed' }, { status: 409 })
   }
 
   // Send magic link with explicit implicit flow so the callback receives token_hash + type
   // as query params (not a PKCE code). PKCE requires a code verifier stored client-side
   // which doesn't work when the OTP is initiated server-side.
+  const claimParam = unclaimedNumbers.join(',')
   const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { flowType: 'implicit' },
   })
   const { error: authError } = await anonClient.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${request.nextUrl.origin}/auth/callback?claim_car=${car_number}`,
+      emailRedirectTo: `${request.nextUrl.origin}/auth/callback?claim_cars=${claimParam}`,
     },
   })
 
@@ -54,5 +66,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: authError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, car_numbers: unclaimedNumbers })
 }

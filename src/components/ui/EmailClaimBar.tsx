@@ -48,21 +48,18 @@ export default function EmailClaimBar() {
     if (!email || unclaimedNumbers.length === 0) return
     setStatus('sending')
 
-    // Send claim for the first (or only) unclaimed car.
-    // The magic link is per-email so the user will be authenticated and the callback
-    // will associate their account. We use the last-built car's number as the primary claim.
-    const primaryCar = unclaimedNumbers[unclaimedNumbers.length - 1]
-
     try {
       const res = await fetch('/api/cars/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, car_number: primaryCar }),
+        // Send ALL unclaimed car numbers so every car gets claimed with one magic link
+        body: JSON.stringify({ email, car_numbers: unclaimedNumbers }),
       })
       if (res.ok) {
         setStatus('sent')
         // Clear unclaimed tracking — the magic link will associate them server-side
         localStorage.removeItem('unclaimed_car')
+        localStorage.removeItem('my_cars')
         window.dispatchEvent(new Event('claim-bar-dismissed'))
       } else {
         const data = await res.json().catch(() => ({}))
