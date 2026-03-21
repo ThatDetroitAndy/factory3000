@@ -39,13 +39,14 @@ The audience is **kids and young adults** from Andy's YouTube channel. The site 
 - 3 detailed car models (go-kart, pickup, SUV) — **premium procedural Three.js geometry** with MeshPhysicalMaterial, clearcoat paint, emissive headlights/taillights, chrome trim, distinct personalities per car type. (Kenney GLBs were tried and reverted — procedural approach gives better artistic control and performance.)
 - Conveyor belt with 3 colorful assembly stations (TYPE, PAINT, NAME) + robot arms
 - Crate warehouse with 381K instanced crates representing unclaimed subscribers
-- Parking lot with floating name tags above each car
+- Parking lot shows **your own cars only** (localStorage-based); HUD counter shows global total
 - Car builder flow: type → color → name (no email required)
 - 3D production animation: car travels down conveyor belt, camera follows alongside
 - 3D celebration: when car finishes, name floats above it with sparkles + "Press WASD to drive!" prompt
 - AI name filter (local blocklist + Claude Haiku API fallback)
-- Magic link email claim (optional — to come back and modify your car later)
+- Magic link email claim fixed — supports multi-car claiming per email
 - Persistent email claim bar (localStorage-based, stays until claimed or dismissed)
+- **My Cars panel** — multi-vehicle switching UI; visitors can build multiple cars and switch between them
 - Factory props: trees, bushes, tire stacks, oil barrels, toolboxes, flags, traffic cones, forklift, warning lights
 - Warm colorful ground (terracotta sand + grass patches), blue sky, sunset environment map
 - Shareable car pages at /car/[number] with OG metadata
@@ -66,13 +67,16 @@ The audience is **kids and young adults** from Andy's YouTube channel. The site 
 - [x] **Mobile touch controls** — virtual D-pad + horn button for driving on phones
 - [x] **Sound effects** — engine hum, horn, conveyor, fanfare, ambient; iOS audio unlock
 - [x] **Visual polish** — premium car materials (clearcoat, emissive lights, chrome), mobile performance optimizations
+- [x] **My Cars panel** — multi-vehicle switching UI, personal parking lot (localStorage)
+- [x] **Email claim flow** — fixed end-to-end, supports multiple cars per email
 - [ ] **Car name max length tuning** (currently 24 chars — may need adjusting)
 - [ ] **Service role key** in Vercel env (needed for server-side car creation)
 - [ ] **Domain name** setup (factory3000.com? mutinyfactory.com?)
 
 ### Phase 3 — Scale & Share ← NEXT
 Handle real traffic, make sharing irresistible.
-- [ ] **InstancedMesh rendering** for 100K+ cars in the parking lot (perf critical)
+- [ ] **Interactive assembly line customization** — instead of a flat menu builder, the user customizes their car *as it physically travels through the factory stations*. When you pick paint, the car is at the paint booth. When you pick wheels, it's at the wheel station. Each choice happens at the relevant station with options visible in-world. Makes the build process feel like a real factory tour.
+- [ ] **InstancedMesh rendering** for 100K+ cars in the parking lot (perf critical; parking lot currently personal-only — shared lot deferred to Phase 5)
 - [ ] **YouTube API integration** — live subscriber count displayed in-world, crate count updates automatically
 - [ ] **Social share image** — generate a screenshot/card of your car + number + name, optimized for Twitter/IG/TikTok
 - [ ] **Mobile performance** — LOD, culling, reduced draw calls for phones
@@ -90,6 +94,7 @@ Turn engagement into revenue to fund the real factory.
 ### Phase 5 — Multiplayer & Community
 Make it a living world.
 - [ ] **Multiplayer driving** — see other players driving in real-time (WebSocket or Supabase Realtime)
+- [ ] **Shared parking lot** — all cars from all users visible in the lot (requires InstancedMesh at scale)
 - [ ] **Car upgrades** — spoilers, decals, wheels, paint jobs
 - [ ] **Leaderboard / community features** — most miles driven, oldest car, etc.
 - [ ] **Factory expansion animations** — the factory physically grows as the community grows
@@ -101,6 +106,8 @@ Make it a living world.
 - **3D celebration** → car name + sparkles + "WASD to drive" appear above car when done (no dialog)
 - **No login required** → anyone can build a car. Email is optional, just for claiming ownership.
 - **Persistent email prompt** → localStorage tracks unclaimed cars, bar reappears until claimed
+- **Personal parking lot** → visitors see only their own cars in 3D; HUD counter shows global total. Shared lot is Phase 5.
+- **My Cars panel** → multi-vehicle switching; build multiple cars, switch between them to drive
 
 ## Supabase Schema
 ```sql
