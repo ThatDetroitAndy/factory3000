@@ -15,7 +15,7 @@ function getGridPosition(index: number): [number, number, number] {
   const row = Math.floor(index / PARKING_COLS)
   const col = index % PARKING_COLS
   const x = col * PARKING_SPACING - (PARKING_COLS * PARKING_SPACING) / 2
-  const z = row * PARKING_SPACING + 50 // buffer zone: belt exit is ~Z=25, first row at Z=50
+  const z = row * PARKING_SPACING + 70 // buffer zone: belt exit is ~Z=52, first row at Z=70
   return [x, 0, z]
 }
 
@@ -29,7 +29,7 @@ export default function ParkingLot({ cars, drivenCarNumber }: ParkingLotProps) {
       {/* Parking lot surface — smooth lighter concrete */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.02, 50 + (Math.ceil(Math.max(cars.length, 1) / PARKING_COLS) * PARKING_SPACING) / 2]}
+        position={[0, 0.02, 70 + (Math.ceil(Math.max(cars.length, 1) / PARKING_COLS) * PARKING_SPACING) / 2]}
         receiveShadow
       >
         <planeGeometry

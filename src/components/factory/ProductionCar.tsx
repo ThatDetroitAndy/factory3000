@@ -96,7 +96,7 @@ export default function ProductionCar({ carType, color, onComplete }: Production
 
   return (
     <group ref={groupRef} position={[BELT_X, BELT_Y, START_Z]}>
-      <CarModel carType={carType} color={color} />
+      <CarModel carType={carType} color={color} scale={1.3} />
     </group>
   )
 }
