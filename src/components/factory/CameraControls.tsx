@@ -12,9 +12,11 @@ interface CameraControlsProps {
   driveMode?: boolean
   /** Whether production animation is running (disables orbit, camera controlled by ProductionCar) */
   isProducing?: boolean
+  /** Whether assembly line builder is active (disables orbit, camera controlled by AssemblyLineCar) */
+  isAssembly?: boolean
 }
 
-export default function CameraControls({ flyToTarget, driveMode = false, isProducing = false }: CameraControlsProps) {
+export default function CameraControls({ flyToTarget, driveMode = false, isProducing = false, isAssembly = false }: CameraControlsProps) {
   const controlsRef = useRef<any>(null)
   const isFlying = useRef(false)
   const flyProgress = useRef(0)
@@ -49,7 +51,7 @@ export default function CameraControls({ flyToTarget, driveMode = false, isProdu
     }
   })
 
-  if (driveMode || isProducing) return null
+  if (driveMode || isProducing || isAssembly) return null
 
   return (
     <OrbitControls

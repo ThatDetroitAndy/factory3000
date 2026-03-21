@@ -2,11 +2,12 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import FactoryScene from '@/components/factory/FactoryScene'
-import type { ProductionJob, CelebrationState, DriveModeState } from '@/components/factory/FactoryScene'
+import type { ProductionJob, CelebrationState, DriveModeState, AssemblyModeState } from '@/components/factory/FactoryScene'
 import HUD from '@/components/ui/HUD'
 import EmailClaimBar from '@/components/ui/EmailClaimBar'
 import DriveControls from '@/components/ui/DriveControls'
 import MyCarsPanel from '@/components/ui/MyCarsPanel'
+import CarBuilder from '@/components/builder/CarBuilder'
 import type { Car } from '@/lib/types'
 
 interface FactoryAppProps {
@@ -43,6 +44,7 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
   const [driveModeState, setDriveModeState] = useState<DriveModeState | null>(null)
   const [claimBarVisible, setClaimBarVisible] = useState(false)
+  const [assemblyMode, setAssemblyMode] = useState<AssemblyModeState | null>(null)
 
   // Load my cars from localStorage on mount
   useEffect(() => {
@@ -117,7 +119,23 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
     setTimeout(() => setDriveModeState(state), 50)
   }, [])
 
+  // Assembly line handlers
+  const handleBuildCar = useCallback(() => {
+    setCelebration(null)
+    setDriveModeState(null)
+    setAssemblyMode({ station: 'chassis', carType: null, color: null })
+  }, [])
+
+  const handleAssemblyClose = useCallback(() => {
+    setAssemblyMode(null)
+  }, [])
+
+  const handleAssemblyUpdate = useCallback((update: Partial<AssemblyModeState>) => {
+    setAssemblyMode(prev => prev ? { ...prev, ...update } : null)
+  }, [])
+
   const isDriving = !!driveModeState
+  const isAssembly = !!assemblyMode && !productionJob
 
   return (
     <>
@@ -131,14 +149,13 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
         onStartDrive={celebration ? handleStartDrive : undefined}
         driveModeState={driveModeState}
         onExitDrive={handleExitDrive}
+        assemblyMode={isAssembly ? assemblyMode : null}
       />
       {!isDriving && (
         <HUD
           carCount={carCount}
           onFlyTo={handleFlyTo}
-          onCarsChanged={handleCarsChanged}
-          onStartProduction={handleStartProduction}
-          onCelebrate={handleCelebrate}
+          onBuildCar={handleBuildCar}
           hideCounter={claimBarVisible}
         />
       )}
@@ -149,6 +166,16 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
           onFlyTo={handleFlyTo}
           isDriving={isDriving}
           onSwitchDrive={handleSwitchDrive}
+        />
+      )}
+      {isAssembly && assemblyMode && (
+        <CarBuilder
+          assemblyMode={assemblyMode}
+          onUpdate={handleAssemblyUpdate}
+          onClose={handleAssemblyClose}
+          onStartProduction={handleStartProduction}
+          onCarsChanged={handleCarsChanged}
+          onCelebrate={handleCelebrate}
         />
       )}
     </>

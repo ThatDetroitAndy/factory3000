@@ -16,6 +16,7 @@ import FactoryProps from './FactoryProps'
 import FactoryBuilding from './FactoryBuilding'
 import CelebrationOverlay from './CelebrationOverlay'
 import DriveMode from './DriveMode'
+import AssemblyLineCar from './AssemblyLineCar'
 
 export interface ProductionJob {
   carType: CarType
@@ -36,6 +37,12 @@ export interface DriveModeState {
   startPosition: [number, number, number]
 }
 
+export interface AssemblyModeState {
+  station: 'chassis' | 'paint' | 'name'
+  carType: CarType | null
+  color: string | null
+}
+
 interface FactorySceneProps {
   cars: Car[]
   totalCarCount: number
@@ -46,6 +53,7 @@ interface FactorySceneProps {
   onStartDrive?: () => void
   driveModeState?: DriveModeState | null
   onExitDrive?: () => void
+  assemblyMode?: AssemblyModeState | null
 }
 
 export default function FactoryScene({
@@ -58,8 +66,10 @@ export default function FactoryScene({
   onStartDrive,
   driveModeState,
   onExitDrive,
+  assemblyMode,
 }: FactorySceneProps) {
   const isDriving = !!driveModeState
+  const isAssembly = !!assemblyMode
   const mobile = isMobileDevice()
 
   return (
@@ -83,6 +93,14 @@ export default function FactoryScene({
           <CrateWarehouse builtCount={totalCarCount} />
           <ParkingLot cars={cars} />
           <FactoryProps />
+
+          {assemblyMode && !productionJob && (
+            <AssemblyLineCar
+              station={assemblyMode.station}
+              carType={assemblyMode.carType}
+              color={assemblyMode.color}
+            />
+          )}
 
           {productionJob && (
             <ProductionCar
@@ -115,6 +133,7 @@ export default function FactoryScene({
           flyToTarget={flyToTarget}
           isProducing={!!productionJob}
           driveMode={isDriving}
+          isAssembly={isAssembly}
         />
       </Canvas>
     </div>
