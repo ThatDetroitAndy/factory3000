@@ -15,10 +15,12 @@ interface DriveModeProps {
   onExit: () => void
 }
 
-const TURN_SPEED = 2.2       // rad/s
-const DRIVE_SPEED = 18       // units/s forward
-const REVERSE_SPEED = 8      // units/s backward
-const DRAG = 4               // velocity damping
+// Per-vehicle physics profiles — each car feels distinct
+const VEHICLE_PROFILES = {
+  car1: { topSpeed: 22, acceleration: 18, brakeForce: 35, friction: 9,  reverseMax: 10, maxTurnRate: 2.8 }, // go-kart: zippy, responsive
+  car2: { topSpeed: 16, acceleration: 11, brakeForce: 24, friction: 6,  reverseMax: 7,  maxTurnRate: 2.2 }, // pickup: solid, steady
+  car3: { topSpeed: 12, acceleration: 7,  brakeForce: 16, friction: 4,  reverseMax: 5,  maxTurnRate: 2.0 }, // SUV: heavy, powerful
+} as const
 
 export default function DriveMode({ carType, color, startPosition, onExit }: DriveModeProps) {
   const groupRef = useRef<THREE.Group>(null)
@@ -85,23 +87,50 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
 
   useFrame((_, delta) => {
     if (!groupRef.current) return
+    const p = VEHICLE_PROFILES[carType]
 
-    // Turning — only when moving
-    const isMoving = Math.abs(velocity.current) > 0.1
-    if (isMoving) {
-      const turnDir = velocity.current > 0 ? 1 : -1
-      if (driveInput.left)  yaw.current += TURN_SPEED * delta * turnDir
-      if (driveInput.right) yaw.current -= TURN_SPEED * delta * turnDir
+    // --- Acceleration / braking physics ---
+    if (driveInput.forward) {
+      if (velocity.current < 0) {
+        // Braking hard from reverse
+        velocity.current += p.brakeForce * delta
+        if (velocity.current > 0) velocity.current = 0
+      } else {
+        // Accelerating forward
+        velocity.current += p.acceleration * delta
+      }
+    } else if (driveInput.backward) {
+      if (velocity.current > 0.1) {
+        // Braking hard from forward
+        velocity.current -= p.brakeForce * delta
+        if (velocity.current < 0) velocity.current = 0
+      } else {
+        // Reversing
+        velocity.current -= p.acceleration * 0.55 * delta
+      }
+    } else {
+      // Coasting — friction brings velocity to zero
+      if (velocity.current > 0) {
+        velocity.current -= p.friction * delta
+        if (velocity.current < 0) velocity.current = 0
+      } else if (velocity.current < 0) {
+        velocity.current += p.friction * delta
+        if (velocity.current > 0) velocity.current = 0
+      }
     }
 
-    // Acceleration
-    if (driveInput.forward)  velocity.current += DRIVE_SPEED * delta
-    if (driveInput.backward) velocity.current -= REVERSE_SPEED * delta
-    // Clamp
-    velocity.current = THREE.MathUtils.clamp(velocity.current, -REVERSE_SPEED, DRIVE_SPEED)
-    // Drag
-    velocity.current *= Math.pow(1 - DRAG * delta, 1)
-    if (Math.abs(velocity.current) < 0.01) velocity.current = 0
+    // Clamp to speed limits
+    velocity.current = THREE.MathUtils.clamp(velocity.current, -p.reverseMax, p.topSpeed)
+
+    // --- Speed-proportional turning: tight at low speed, wide at high speed ---
+    if (Math.abs(velocity.current) > 0.3) {
+      const speedFactor = Math.min(1, Math.abs(velocity.current) / p.topSpeed)
+      // Turn rate is tighter at low speed (1.0x) and wider at high speed (0.45x)
+      const turnRate = p.maxTurnRate * (1 - 0.55 * speedFactor)
+      const turnDir = velocity.current > 0 ? 1 : -1
+      if (driveInput.left)  yaw.current += turnRate * delta * turnDir
+      if (driveInput.right) yaw.current -= turnRate * delta * turnDir
+    }
 
     // Move
     const forward = new THREE.Vector3(Math.sin(yaw.current), 0, Math.cos(yaw.current))
@@ -111,8 +140,8 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
     groupRef.current.position.copy(pos.current)
     groupRef.current.rotation.y = yaw.current
 
-    // Engine sound
-    const speedNorm = Math.abs(velocity.current) / DRIVE_SPEED
+    // Engine sound — normalize to this vehicle's top speed
+    const speedNorm = Math.abs(velocity.current) / p.topSpeed
     updateEngineSpeed(speedNorm)
 
     // Horn
