@@ -33,10 +33,10 @@ The audience is **kids and young adults** from Andy's YouTube channel. The site 
 - **Payments:** Stripe (future Phase 4)
 - **Style:** Bruno Simon-inspired — warm, colorful, playful, fun for kids
 
-## Current Status (Phase 2 — in progress)
+## Current Status (Phase 2.5 — complete, Phase 3 next)
 ### Built ✅
 - 3D factory building modeled after Andy's real Detroit factory (5938 Linsdale) — red brick, rolling doors, decorative cornice, corrugated metal rear, blue dumpsters, fire hydrant, utility poles
-- 3 detailed car models (go-kart, pickup, SUV) with headlights, taillights, wheels, bumpers, exhaust
+- 3 detailed car models (go-kart, pickup, SUV) — **premium procedural Three.js geometry** with MeshPhysicalMaterial, clearcoat paint, emissive headlights/taillights, chrome trim, distinct personalities per car type. (Kenney GLBs were tried and reverted — procedural approach gives better artistic control and performance.)
 - Conveyor belt with 3 colorful assembly stations (TYPE, PAINT, NAME) + robot arms
 - Crate warehouse with 381K instanced crates representing unclaimed subscribers
 - Parking lot with floating name tags above each car
@@ -52,23 +52,27 @@ The audience is **kids and young adults** from Andy's YouTube channel. The site 
 - Search bar with fly-to camera animation
 - HUD with car counter + progress bar
 - Deployed to Vercel with Supabase env vars
+- **Drive mode** — WASD keyboard controls, third-person camera follow, smooth physics
+- **Mobile touch controls** — virtual D-pad for driving on phones, safe-area aware layout
+- **Sound effects** — engine hum, two-tone "beep-beep" horn (sawtooth + filter synthesis), conveyor clanks, celebration fanfare, ambient factory noise; audio unlocked on first touch for iOS
+- **Mobile P0 fixes** — viewport meta, HUD overflow, iOS canvas height, auto-zoom, safe areas
+- **Mobile P1 fixes** — audio unlock on touch, touch-action CSS, DPR cap (perf), claim bar overlap, WASD hints for desktop
+- **Mobile P2 perf** — shadows disabled on mobile, fewer instanced crates/props, name tag distance culling
 
 ## Roadmap
 
-### Phase 2.5 — Polish & Playable ← CURRENT
-Make the site feel like a real game. Right now it works — this phase makes it *fun*.
-- [ ] **Drive mode** — WASD keyboard controls, third-person camera follow, smooth physics
-- [ ] **Mobile touch controls** — virtual joystick + buttons for driving on phones
-- [ ] **Sound effects** — engine hum, conveyor clanks, celebration fanfare, ambient factory noise
-- [ ] **Visual polish** — better lighting, shadows, post-processing (bloom, AO)
+### Phase 2.5 — Polish & Playable ✅ COMPLETE
+- [x] **Drive mode** — WASD keyboard controls, third-person camera follow, smooth physics
+- [x] **Mobile touch controls** — virtual D-pad + horn button for driving on phones
+- [x] **Sound effects** — engine hum, horn, conveyor, fanfare, ambient; iOS audio unlock
+- [x] **Visual polish** — premium car materials (clearcoat, emissive lights, chrome), mobile performance optimizations
 - [ ] **Car name max length tuning** (currently 24 chars — may need adjusting)
 - [ ] **Service role key** in Vercel env (needed for server-side car creation)
 - [ ] **Domain name** setup (factory3000.com? mutinyfactory.com?)
 
-### Phase 3 — Scale & Share
+### Phase 3 — Scale & Share ← NEXT
 Handle real traffic, make sharing irresistible.
 - [ ] **InstancedMesh rendering** for 100K+ cars in the parking lot (perf critical)
-- [ ] **Better car models** — .glb imports replacing primitives, matching real factory vehicle designs (abstract/toylike)
 - [ ] **YouTube API integration** — live subscriber count displayed in-world, crate count updates automatically
 - [ ] **Social share image** — generate a screenshot/card of your car + number + name, optimized for Twitter/IG/TikTok
 - [ ] **Mobile performance** — LOD, culling, reduced draw calls for phones
