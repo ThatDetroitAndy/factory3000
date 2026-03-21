@@ -126,7 +126,8 @@ export default function CarBuilder({
       window.dispatchEvent(new Event('car-built'))
 
       // Wait for the 3D production animation to finish
-      await new Promise((r) => setTimeout(r, 11000))
+      // ProductionCar rolls ~52 units at speed 10 (~5.2s) + 1.5s completion delay = ~6.7s total
+      await new Promise((r) => setTimeout(r, 7500))
 
       onCelebrate({
         name: name.trim(),

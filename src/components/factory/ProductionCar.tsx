@@ -31,21 +31,17 @@ export default function ProductionCar({ carType, color, onComplete }: Production
   const wheelBottomLocal = carType === 'car3' ? 0.0 : -0.05
   const BELT_Y = BELT_TOP - wheelBottomLocal  // wheels sit flush on belt surface
   const BELT_X = 0
-  const START_Z = -70
-  const END_Z = 50
+  // Start from the NAME station (world Z=0) — car was already there in builder.
+  // Just roll off the end of the belt into the parking lot.
+  const START_Z = 0
+  const END_Z = 52
   const TOTAL_DISTANCE = END_Z - START_Z
-  const SPEED = 12
+  const SPEED = 10
 
-  // Initialize camera to a side-view starting position
+  // Initialize smooth camera from current position — no jarring jump
   useEffect(() => {
-    const startPos = new THREE.Vector3(BELT_X, BELT_Y, START_Z)
-    // Side-view offset: camera is to the +X side, above, no Z offset
-    // This avoids clipping through factory back/front walls
-    const startOffset = new THREE.Vector3(16, 7, 4)
-    smoothCamPos.current.copy(startPos).add(startOffset)
-    smoothLookAt.current.copy(startPos).add(new THREE.Vector3(0, 1.2, 0))
-    camera.position.copy(smoothCamPos.current)
-    camera.lookAt(smoothLookAt.current)
+    smoothCamPos.current.copy(camera.position)
+    smoothLookAt.current.copy(new THREE.Vector3(BELT_X, BELT_Y + 1.2, START_Z))
 
     startConveyorHum()
     return () => stopConveyorHum()
@@ -71,21 +67,20 @@ export default function ProductionCar({ carType, color, onComplete }: Production
     carPos.x += Math.sin(t * 40) * 0.03
     groupRef.current.position.copy(carPos)
 
-    // ── Camera: pure side-view, no Z offset so we never clip factory walls ──
-    // X offset: start wide (16), gently pull in to 12 as car clears the factory
-    const pullIn = Math.min(t * 1.5, 1)
-    let cx = 16 - pullIn * 4   // 16 → 12
-    let cy = 7 - pullIn * 1.5  // 7 → 5.5 — drop slightly as we zoom in
-    let cz = 4 - pullIn * 2    // 4 → 2 — small forward lean
+    // ── Camera: side-view follow for the roll-off, then sweep to front ──
+    // Car starts at name station (Z=0) and rolls to parking lot (Z=52)
+    const pullIn = Math.min(t * 2, 1)
+    let cx = 14 - pullIn * 3   // 14 → 11 — side view, gentle pull-in
+    let cy = 6 - pullIn * 1.0  // 6 → 5
+    let cz = 2 - pullIn * 1    // 2 → 1
 
-    // Final ~20%: sweep camera around to face the car from the front
-    if (t > 0.8) {
-      const swing = (t - 0.8) / 0.2 // 0→1
-      // Ease the swing
+    // Final 30%: sweep camera around to face the car from the front
+    if (t > 0.7) {
+      const swing = (t - 0.7) / 0.3 // 0→1
       const ease = swing * swing * (3 - 2 * swing) // smoothstep
       cx = (1 - ease) * cx + ease * 0             // side → center
-      cy = (1 - ease) * cy + ease * 6             // same height
-      cz = (1 - ease) * cz + ease * -14           // in front of car
+      cy = (1 - ease) * cy + ease * 6
+      cz = (1 - ease) * cz + ease * -12           // in front of car
     }
 
     const targetCamPos = carPos.clone().add(new THREE.Vector3(cx, cy, cz))
