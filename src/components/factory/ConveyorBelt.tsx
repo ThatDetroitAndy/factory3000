@@ -11,7 +11,7 @@ export default function ConveyorBelt({
   isProducing?: boolean
   activeStation?: 'chassis' | 'paint' | 'name' | null
 }) {
-  const BELT_LENGTH = 120
+  const BELT_LENGTH = 70
   const BELT_WIDTH = 4
   const BELT_HEIGHT = 1.2
 

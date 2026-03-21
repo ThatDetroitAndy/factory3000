@@ -91,8 +91,8 @@ export default function FactoryBuilding() {
         </group>
       ))}
 
-      {/* Sign area above doors */}
-      <mesh position={[0, 9.5, 39]}>
+      {/* Sign area above doors — pushed forward to avoid Z-fighting with door faces */}
+      <mesh position={[0, 9.5, 39.3]}>
         <boxGeometry args={[30, 2, 0.1]} />
         <meshStandardMaterial color="#F0E8D8" roughness={0.7} />
       </mesh>

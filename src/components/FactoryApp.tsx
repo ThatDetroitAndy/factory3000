@@ -94,11 +94,13 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
   }, [])
 
   const handleProductionComplete = useCallback(() => {
-    setProductionJob(null)
+    // Don't clear productionJob here — clear it atomically with setCelebration in handleCelebrate
+    // so there's no render gap where OrbitControls mounts and snaps the camera.
     handleCarsChanged()
   }, [handleCarsChanged])
 
   const handleCelebrate = useCallback((state: CelebrationState) => {
+    setProductionJob(null)  // atomic with setCelebration — no OrbitControls gap
     setCelebration(state)
     // Auto-dismiss celebration after 15 seconds
     setTimeout(() => setCelebration(prev => prev?.carNumber === state.carNumber ? null : prev), 15000)
