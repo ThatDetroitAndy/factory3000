@@ -16,7 +16,7 @@ import FactoryProps from './FactoryProps'
 import FactoryBuilding from './FactoryBuilding'
 import CelebrationOverlay from './CelebrationOverlay'
 import DriveMode from './DriveMode'
-import AssemblyLineCar from './AssemblyLineCar'
+import BuilderCar from './BuilderCar'
 
 export interface ProductionJob {
   carType: CarType
@@ -37,8 +37,9 @@ export interface DriveModeState {
   startPosition: [number, number, number]
 }
 
-export interface AssemblyModeState {
-  station: 'chassis' | 'paint' | 'name'
+/** Live state of the assembly line builder — drives the 3D car preview */
+export interface BuilderPreview {
+  step: 'chassis' | 'paint' | 'name'
   carType: CarType | null
   color: string | null
 }
@@ -53,7 +54,8 @@ interface FactorySceneProps {
   onStartDrive?: () => void
   driveModeState?: DriveModeState | null
   onExitDrive?: () => void
-  assemblyMode?: AssemblyModeState | null
+  /** When set, shows a car on the belt at the current builder station */
+  builderPreview?: BuilderPreview | null
 }
 
 export default function FactoryScene({
@@ -66,10 +68,9 @@ export default function FactoryScene({
   onStartDrive,
   driveModeState,
   onExitDrive,
-  assemblyMode,
+  builderPreview,
 }: FactorySceneProps) {
   const isDriving = !!driveModeState
-  const isAssembly = !!assemblyMode
   const mobile = isMobileDevice()
 
   return (
@@ -94,11 +95,12 @@ export default function FactoryScene({
           <ParkingLot cars={cars} />
           <FactoryProps />
 
-          {assemblyMode && !productionJob && (
-            <AssemblyLineCar
-              station={assemblyMode.station}
-              carType={assemblyMode.carType}
-              color={assemblyMode.color}
+          {/* Builder mode: live car preview on the conveyor belt */}
+          {builderPreview && !productionJob && (
+            <BuilderCar
+              step={builderPreview.step}
+              carType={builderPreview.carType}
+              color={builderPreview.color}
             />
           )}
 
@@ -133,7 +135,7 @@ export default function FactoryScene({
           flyToTarget={flyToTarget}
           isProducing={!!productionJob}
           driveMode={isDriving}
-          isAssembly={isAssembly}
+          builderStep={builderPreview?.step ?? null}
         />
       </Canvas>
     </div>

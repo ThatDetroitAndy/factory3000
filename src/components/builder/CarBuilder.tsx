@@ -1,57 +1,56 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import TypePicker from './TypePicker'
 import ColorPicker from './ColorPicker'
 import NameInput from './NameInput'
-import type { ProductionJob, CelebrationState, AssemblyModeState } from '@/components/factory/FactoryScene'
+import type { CarType } from '@/lib/types'
+import type { ProductionJob, CelebrationState, BuilderPreview } from '@/components/factory/FactoryScene'
 
 interface CarBuilderProps {
-  assemblyMode: AssemblyModeState
-  onUpdate: (update: Partial<AssemblyModeState>) => void
   onClose: () => void
   onStartProduction: (job: ProductionJob) => void
   onCarsChanged: () => void
   onCelebrate: (state: CelebrationState) => void
+  /** Called whenever step/type/color changes so FactoryScene can update the 3D preview */
+  onStateChange: (preview: BuilderPreview) => void
 }
 
-// Station accent colors matching the 3D assembly stations in ConveyorBelt.tsx
-const STATION_COLOR: Record<AssemblyModeState['station'], string> = {
-  chassis: '#FF6B6B',
-  paint: '#4ECDC4',
-  name: '#C47AFF',
-}
+type Step = 'chassis' | 'paint' | 'name'
 
-const STATION_LABELS: Record<AssemblyModeState['station'], string> = {
-  chassis: 'CHASSIS',
-  paint: 'PAINT',
-  name: 'NAME',
+const STATIONS: Record<Step, { label: string; accent: string; num: number }> = {
+  chassis: { label: 'CHASSIS STATION', accent: '#FF6B6B', num: 1 },
+  paint:   { label: 'PAINT STATION',   accent: '#4ECDC4', num: 2 },
+  name:    { label: 'NAME STATION',    accent: '#C47AFF', num: 3 },
 }
 
 export default function CarBuilder({
-  assemblyMode,
-  onUpdate,
   onClose,
   onStartProduction,
   onCarsChanged,
   onCelebrate,
+  onStateChange,
 }: CarBuilderProps) {
+  const [step, setStep] = useState<Step>('chassis')
+  const [carType, setCarType] = useState<CarType | null>(null)
+  const [color, setColor] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [nameValid, setNameValid] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [building, setBuilding] = useState(false)
 
-  const { station, carType, color } = assemblyMode
-  const accentColor = STATION_COLOR[station]
-  const stationIndex = ['chassis', 'paint', 'name'].indexOf(station)
+  // Keep FactoryScene's 3D preview in sync with every selection
+  useEffect(() => {
+    onStateChange({ step, carType, color })
+  }, [step, carType, color, onStateChange])
 
-  const handleSubmit = async () => {
-    if (!carType || !color || !name.trim() || isSubmitting) return
+  const handleSubmit = useCallback(async () => {
+    if (!carType || !color || !name.trim()) return
 
-    setIsSubmitting(true)
+    setBuilding(true)
     setError(null)
 
-    // Start the 3D conveyor animation immediately — panel stays until API resolves
+    // Hand off to ProductionCar animation immediately
     onStartProduction({ carType, color })
 
     try {
@@ -65,7 +64,7 @@ export default function CarBuilder({
 
       if (!res.ok) {
         setError(data.error || 'Something went wrong')
-        setIsSubmitting(false)
+        setBuilding(false)
         return
       }
 
@@ -89,9 +88,6 @@ export default function CarBuilder({
 
       window.dispatchEvent(new Event('car-built'))
 
-      // Close the assembly panel immediately — ProductionCar takes over visually
-      onClose()
-
       // Wait for the 3D production animation to finish
       await new Promise((r) => setTimeout(r, 11000))
 
@@ -104,131 +100,131 @@ export default function CarBuilder({
       })
 
       onCarsChanged()
+      onClose()
     } catch (err) {
       console.error('[CarBuilder] fetch error:', err)
       setError('Network error — please try again')
-      setIsSubmitting(false)
+      setBuilding(false)
     }
-  }
+  }, [carType, color, name, onStartProduction, onCelebrate, onCarsChanged, onClose])
 
-  // Hidden during submission — ProductionCar is running
-  if (isSubmitting && !error) return null
+  // During the production animation, hide the panel — 3D scene takes over
+  if (building) return null
+
+  const { label, accent, num } = STATIONS[step]
 
   return (
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 pointer-events-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] px-4 w-full max-w-md">
+    // Fixed panel — bottom-center on mobile, bottom-right on desktop
+    // Doesn't block the 3D scene above it
+    <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-3 sm:inset-x-auto sm:right-5 sm:bottom-20 sm:px-0 sm:pb-0 pointer-events-none">
       <div
-        className="rounded-2xl overflow-hidden shadow-2xl"
+        className="pointer-events-auto w-full sm:w-80 rounded-2xl overflow-hidden shadow-2xl"
         style={{
           background: 'rgba(12, 12, 18, 0.93)',
+          border: `1px solid ${accent}50`,
           backdropFilter: 'blur(16px)',
-          border: `2px solid ${accentColor}50`,
-          boxShadow: `0 0 40px ${accentColor}20, 0 20px 60px rgba(0,0,0,0.6)`,
         }}
       >
-        {/* Station progress tabs */}
-        <div className="flex" style={{ borderBottom: `1px solid ${accentColor}20` }}>
-          {(['chassis', 'paint', 'name'] as const).map((s, i) => {
-            const isDone = i < stationIndex
-            const isActive = s === station
-            return (
-              <div
-                key={s}
-                className="flex-1 py-3 text-center text-xs font-black tracking-widest transition-all select-none"
-                style={{
-                  color: isActive ? accentColor : isDone ? '#ffffff50' : '#ffffff25',
-                  borderBottom: isActive ? `3px solid ${accentColor}` : '3px solid transparent',
-                  background: isActive ? `${accentColor}10` : 'transparent',
-                }}
-              >
-                {isDone ? '✓ ' : `${i + 1}. `}{STATION_LABELS[s]}
-              </div>
-            )
-          })}
+        {/* Station header */}
+        <div
+          className="px-5 pt-4 pb-3 flex items-start justify-between"
+          style={{ borderBottom: `1px solid ${accent}25` }}
+        >
+          <div>
+            <span
+              className="text-xs font-black uppercase tracking-widest"
+              style={{ color: accent }}
+            >
+              {label}
+            </span>
+            {/* Step progress dots */}
+            <div className="flex gap-1.5 mt-2">
+              {(['chassis', 'paint', 'name'] as Step[]).map((s, i) => (
+                <div
+                  key={s}
+                  className="h-1.5 rounded-full transition-all duration-300"
+                  style={{
+                    width: i + 1 <= num ? '24px' : '16px',
+                    background: i + 1 <= num ? accent : 'rgba(255,255,255,0.12)',
+                  }}
+                />
+              ))}
+              <span className="text-white/30 text-xs ml-1 self-center">
+                {num} / 3
+              </span>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="px-4 text-white/25 hover:text-white/60 text-xl leading-none transition-colors"
+            className="text-white/25 hover:text-white/60 text-2xl leading-none transition-colors ml-2 mt-0.5"
             aria-label="Close builder"
           >
             ×
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-5">
-
-          {/* STATION 1 — CHASSIS */}
-          {station === 'chassis' && (
+        {/* Station content */}
+        <div className="px-5 py-4">
+          {step === 'chassis' && (
             <div className="space-y-4">
-              <TypePicker selected={carType} onSelect={(t) => onUpdate({ carType: t })} />
+              <TypePicker selected={carType} onSelect={setCarType} />
               <button
-                onClick={() => onUpdate({ station: 'paint' })}
+                onClick={() => setStep('paint')}
                 disabled={!carType}
-                className="w-full py-3.5 font-black rounded-xl text-white text-sm tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{
-                  background: carType ? `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` : '#ffffff15',
-                  boxShadow: carType ? `0 4px 20px ${accentColor}40` : 'none',
-                }}
+                className="w-full py-3 font-black text-sm rounded-xl uppercase tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-white"
+                style={{ background: carType ? accent : 'rgba(255,255,255,0.08)' }}
               >
-                Next: Paint It →
+                Next: Paint Station →
               </button>
             </div>
           )}
 
-          {/* STATION 2 — PAINT */}
-          {station === 'paint' && (
+          {step === 'paint' && (
             <div className="space-y-4">
-              <ColorPicker selected={color} onSelect={(c) => onUpdate({ color: c })} />
+              <ColorPicker selected={color} onSelect={setColor} />
               <div className="flex gap-2">
                 <button
-                  onClick={() => onUpdate({ station: 'chassis' })}
-                  className="px-5 py-3 rounded-xl text-white/50 hover:text-white/80 transition-colors text-sm font-bold"
-                  style={{ background: '#ffffff10' }}
+                  onClick={() => setStep('chassis')}
+                  className="px-4 py-2.5 rounded-xl text-sm text-white/50 hover:text-white transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.07)' }}
                 >
                   ← Back
                 </button>
                 <button
-                  onClick={() => onUpdate({ station: 'name' })}
+                  onClick={() => setStep('name')}
                   disabled={!color}
-                  className="flex-1 py-3 font-black rounded-xl text-white text-sm tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{
-                    background: color ? `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` : '#ffffff15',
-                    boxShadow: color ? `0 4px 20px ${accentColor}40` : 'none',
-                  }}
+                  className="flex-1 py-2.5 font-black text-sm rounded-xl uppercase tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-white"
+                  style={{ background: color ? accent : 'rgba(255,255,255,0.08)' }}
                 >
-                  Next: Name It →
+                  Next: Name Station →
                 </button>
               </div>
             </div>
           )}
 
-          {/* STATION 3 — NAME */}
-          {station === 'name' && (
+          {step === 'name' && (
             <div className="space-y-4">
               <NameInput value={name} onChange={setName} onValidation={setNameValid} />
-              {error && <p className="text-red-400 text-sm font-bold">{error}</p>}
+              {error && <p className="text-red-400 text-sm">{error}</p>}
               <div className="flex gap-2">
                 <button
-                  onClick={() => onUpdate({ station: 'paint' })}
-                  className="px-5 py-3 rounded-xl text-white/50 hover:text-white/80 transition-colors text-sm font-bold"
-                  style={{ background: '#ffffff10' }}
+                  onClick={() => setStep('paint')}
+                  className="px-4 py-2.5 rounded-xl text-sm text-white/50 hover:text-white transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.07)' }}
                 >
                   ← Back
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={!nameValid || !name.trim() || isSubmitting}
-                  className="flex-1 py-3 font-black rounded-xl text-white text-sm tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{
-                    background: nameValid && name.trim() ? `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)` : '#ffffff15',
-                    boxShadow: nameValid && name.trim() ? `0 4px 20px ${accentColor}40` : 'none',
-                  }}
+                  disabled={!nameValid || !name.trim()}
+                  className="flex-1 py-2.5 font-black text-sm rounded-xl uppercase tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-white"
+                  style={{ background: nameValid && name.trim() ? accent : 'rgba(255,255,255,0.08)' }}
                 >
-                  Build It! 🔧
+                  Build It!
                 </button>
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>

@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import FactoryScene from '@/components/factory/FactoryScene'
-import type { ProductionJob, CelebrationState, DriveModeState, AssemblyModeState } from '@/components/factory/FactoryScene'
+import type { ProductionJob, CelebrationState, DriveModeState, BuilderPreview } from '@/components/factory/FactoryScene'
+import CarBuilder from '@/components/builder/CarBuilder'
 import HUD from '@/components/ui/HUD'
 import EmailClaimBar from '@/components/ui/EmailClaimBar'
 import DriveControls from '@/components/ui/DriveControls'
 import MyCarsPanel from '@/components/ui/MyCarsPanel'
-import CarBuilder from '@/components/builder/CarBuilder'
 import type { Car } from '@/lib/types'
 
 interface FactoryAppProps {
@@ -44,7 +44,10 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
   const [celebration, setCelebration] = useState<CelebrationState | null>(null)
   const [driveModeState, setDriveModeState] = useState<DriveModeState | null>(null)
   const [claimBarVisible, setClaimBarVisible] = useState(false)
-  const [assemblyMode, setAssemblyMode] = useState<AssemblyModeState | null>(null)
+
+  // Assembly line builder state — lives here so FactoryScene can see it
+  const [showBuilder, setShowBuilder] = useState(false)
+  const [builderPreview, setBuilderPreview] = useState<BuilderPreview | null>(null)
 
   // Load my cars from localStorage on mount
   useEffect(() => {
@@ -84,6 +87,8 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
 
   const handleStartProduction = useCallback((job: ProductionJob) => {
     setProductionJob(job)
+    // Remove the builder car from the 3D scene — ProductionCar takes over
+    setBuilderPreview(null)
     setCelebration(null)
     setDriveModeState(null)
   }, [])
@@ -119,23 +124,24 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
     setTimeout(() => setDriveModeState(state), 50)
   }, [])
 
-  // Assembly line handlers
+  // Open the assembly line builder — camera flies to CHASSIS station
   const handleBuildCar = useCallback(() => {
-    setCelebration(null)
-    setDriveModeState(null)
-    setAssemblyMode({ station: 'chassis', carType: null, color: null })
+    setShowBuilder(true)
+    setBuilderPreview({ step: 'chassis', carType: null, color: null })
   }, [])
 
-  const handleAssemblyClose = useCallback(() => {
-    setAssemblyMode(null)
+  // Called by CarBuilder on every step/selection change — drives 3D preview
+  const handleBuilderStateChange = useCallback((preview: BuilderPreview) => {
+    setBuilderPreview(preview)
   }, [])
 
-  const handleAssemblyUpdate = useCallback((update: Partial<AssemblyModeState>) => {
-    setAssemblyMode(prev => prev ? { ...prev, ...update } : null)
+  // Called by CarBuilder when closed (user exits or build completes after 11s)
+  const handleCloseBuilder = useCallback(() => {
+    setShowBuilder(false)
+    setBuilderPreview(null)
   }, [])
 
   const isDriving = !!driveModeState
-  const isAssembly = !!assemblyMode && !productionJob
 
   return (
     <>
@@ -149,8 +155,20 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
         onStartDrive={celebration ? handleStartDrive : undefined}
         driveModeState={driveModeState}
         onExitDrive={handleExitDrive}
-        assemblyMode={isAssembly ? assemblyMode : null}
+        builderPreview={builderPreview}
       />
+
+      {/* Assembly line builder panel — shown above the 3D canvas */}
+      {showBuilder && !isDriving && !productionJob && (
+        <CarBuilder
+          onClose={handleCloseBuilder}
+          onStartProduction={handleStartProduction}
+          onCarsChanged={handleCarsChanged}
+          onCelebrate={handleCelebrate}
+          onStateChange={handleBuilderStateChange}
+        />
+      )}
+
       {!isDriving && (
         <HUD
           carCount={carCount}
@@ -166,16 +184,6 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
           onFlyTo={handleFlyTo}
           isDriving={isDriving}
           onSwitchDrive={handleSwitchDrive}
-        />
-      )}
-      {isAssembly && assemblyMode && (
-        <CarBuilder
-          assemblyMode={assemblyMode}
-          onUpdate={handleAssemblyUpdate}
-          onClose={handleAssemblyClose}
-          onStartProduction={handleStartProduction}
-          onCarsChanged={handleCarsChanged}
-          onCelebrate={handleCelebrate}
         />
       )}
     </>
