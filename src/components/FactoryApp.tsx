@@ -179,7 +179,7 @@ export default function FactoryApp({ initialCarCount }: FactoryAppProps) {
         />
       )}
       {isDriving && <DriveControls onExit={handleExitDrive} />}
-      {!isDriving && <EmailClaimBar />}
+      {!isDriving && !celebration && <EmailClaimBar />}
       {!productionJob && (
         <MyCarsPanel
           onFlyTo={handleFlyTo}

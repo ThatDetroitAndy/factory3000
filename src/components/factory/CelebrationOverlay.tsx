@@ -38,27 +38,28 @@ export default function CelebrationOverlay({ name, carNumber, position, onStartD
     <group ref={groupRef} position={[position[0], position[1] + 5, position[2]]}>
       {/* Big car name */}
       <Text
-        position={[0, 1.5, 0]}
-        fontSize={2}
+        position={[0, 1.2, 0]}
+        fontSize={1.2}
         color="#FFFFFF"
         font={undefined}
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.1}
+        outlineWidth={0.07}
         outlineColor="#FF6B4A"
+        maxWidth={12}
       >
         {name}
       </Text>
 
       {/* Car number */}
       <Text
-        position={[0, 0.2, 0]}
-        fontSize={0.8}
+        position={[0, 0, 0]}
+        fontSize={0.6}
         color="#FFD700"
         font={undefined}
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.05}
+        outlineWidth={0.04}
         outlineColor="#AA8800"
       >
         {`Car #${carNumber}`}
@@ -66,13 +67,13 @@ export default function CelebrationOverlay({ name, carNumber, position, onStartD
 
       {/* "YOUR CAR IS READY!" */}
       <Text
-        position={[0, -0.8, 0]}
-        fontSize={0.6}
+        position={[0, -0.9, 0]}
+        fontSize={0.45}
         color="#FFFFFF"
         font={undefined}
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.04}
+        outlineWidth={0.03}
         outlineColor="#333333"
       >
         YOUR CAR IS READY!

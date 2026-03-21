@@ -86,7 +86,7 @@ export default function EmailClaimBar() {
       >
         <div className="bg-green-900/90 backdrop-blur-sm border border-green-500/30 rounded-xl px-5 py-3 shadow-2xl">
           <p className="text-green-300 text-sm font-medium">
-            Check your email to claim {carLabel}!
+            Check your email to claim your fleet!
           </p>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function EmailClaimBar() {
     >
       <div className="bg-white/95 backdrop-blur-sm border border-orange-200 rounded-xl px-4 py-3 shadow-2xl">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-zinc-900 text-sm font-bold">Save {carLabel} to your account</p>
+          <p className="text-zinc-900 text-sm font-bold">Save your Fleet</p>
           <button
             onClick={() => {
               setDismissed(true)
@@ -112,9 +112,7 @@ export default function EmailClaimBar() {
           </button>
         </div>
         <p className="text-zinc-500 text-xs mb-2">
-          Enter your email to claim{' '}
-          {unclaimedNumbers.length > 1 ? 'your cars' : 'it'} — come back anytime to update{' '}
-          {unclaimedNumbers.length > 1 ? 'them' : 'it'} or order physical copies.
+          Enter your email to claim your fleet — come back anytime to update them or order physical copies.
         </p>
         <div className="flex gap-2">
           <input

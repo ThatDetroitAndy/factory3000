@@ -74,14 +74,23 @@ export default function CarBuilder({
       localStorage.setItem('unclaimed_car', String(newCarNumber))
 
       // Store full car data for My Cars panel
+      // Compute actual grid position so View/Fly-to works correctly.
+      // ParkingLot renders user's cars at index 0,1,2... so we use myCars.length as the index.
       const myCars = JSON.parse(localStorage.getItem('my_cars') || '[]')
+      const PARKING_COLS = 10
+      const PARKING_SPACING = 6
+      const carIndex = myCars.length
+      const computedRow = Math.floor(carIndex / PARKING_COLS)
+      const computedCol = carIndex % PARKING_COLS
+      const computedX = computedCol * PARKING_SPACING - (PARKING_COLS * PARKING_SPACING) / 2
+      const computedZ = computedRow * PARKING_SPACING + 30
       myCars.push({
         car_number: data.car.car_number,
         name: data.car.name,
         car_type: data.car.car_type,
         color: data.car.color,
-        parked_x: data.car.parked_x ?? 0,
-        parked_z: data.car.parked_z ?? 0,
+        parked_x: computedX,
+        parked_z: computedZ,
         parked_rotation: data.car.parked_rotation ?? 0,
       })
       localStorage.setItem('my_cars', JSON.stringify(myCars))
