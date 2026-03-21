@@ -4,7 +4,13 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-export default function ConveyorBelt({ isProducing = false }: { isProducing?: boolean }) {
+export default function ConveyorBelt({
+  isProducing = false,
+  activeStation = null,
+}: {
+  isProducing?: boolean
+  activeStation?: 'chassis' | 'paint' | 'name' | null
+}) {
   const BELT_LENGTH = 120
   const BELT_WIDTH = 4
   const BELT_HEIGHT = 1.2
@@ -75,6 +81,7 @@ export default function ConveyorBelt({ isProducing = false }: { isProducing?: bo
         stationType="weld"
         armPhase={0}
         isProducing={isProducing}
+        isActive={activeStation === 'chassis'}
       />
       <AssemblyStation
         position={[6, 0, -10]}
@@ -83,6 +90,7 @@ export default function ConveyorBelt({ isProducing = false }: { isProducing?: bo
         stationType="paint"
         armPhase={2.8}
         isProducing={isProducing}
+        isActive={activeStation === 'paint'}
       />
       <AssemblyStation
         position={[6, 0, 10]}
@@ -91,6 +99,7 @@ export default function ConveyorBelt({ isProducing = false }: { isProducing?: bo
         stationType="laser"
         armPhase={5.1}
         isProducing={isProducing}
+        isActive={activeStation === 'name'}
       />
     </group>
   )
@@ -105,6 +114,7 @@ function AssemblyStation({
   stationType,
   armPhase,
   isProducing,
+  isActive,
 }: {
   position: [number, number, number]
   label: string
@@ -112,6 +122,7 @@ function AssemblyStation({
   stationType: 'weld' | 'paint' | 'laser'
   armPhase: number
   isProducing: boolean
+  isActive: boolean
 }) {
   return (
     <group position={position}>
@@ -153,6 +164,7 @@ function AssemblyStation({
           stationType={stationType}
           armPhase={armPhase}
           isProducing={isProducing}
+          isActive={isActive}
           accentColor={color}
         />
       </group>
@@ -170,11 +182,13 @@ function IndustrialRobotArm({
   stationType,
   armPhase,
   isProducing,
+  isActive,
   accentColor,
 }: {
   stationType: 'weld' | 'paint' | 'laser'
   armPhase: number
   isProducing: boolean
+  isActive: boolean
   accentColor: string
 }) {
   const j1Ref = useRef<THREE.Group>(null) // base yaw
@@ -188,19 +202,89 @@ function IndustrialRobotArm({
   const WORK = { j1y: 1.57, j2x: -0.45, j3x: -0.30, j4x: -0.25 }
 
   useFrame(({ clock }) => {
+    const raw = clock.getElapsedTime()
+
+    if (isActive) {
+      // ── Station-specific active animations ────────────────────────────────
+      if (stationType === 'weld') {
+        // Deliberate welding strokes: arm sweeps back and forth, vibrates at work
+        const t = raw * 1.4 + armPhase
+        const work = (Math.sin(t) + 1) / 2
+        if (j1Ref.current) {
+          j1Ref.current.rotation.y = REST.j1y + (WORK.j1y - REST.j1y) * work
+          // Lateral weld stroke sweep (Z swing while extended)
+          j1Ref.current.rotation.z = Math.sin(raw * 3.2) * 0.22 * (work > 0.5 ? work : 0)
+        }
+        if (j2Ref.current) j2Ref.current.rotation.x = REST.j2x + (WORK.j2x - REST.j2x) * work
+        if (j3Ref.current) j3Ref.current.rotation.x = REST.j3x + (WORK.j3x - REST.j3x) * work
+        if (j4Ref.current) {
+          j4Ref.current.rotation.x = REST.j4x + (WORK.j4x - REST.j4x) * work
+          // Heavy weld vibration when torch is on the car
+          if (work > 0.55) {
+            j4Ref.current.rotation.z = Math.sin(raw * 18) * 0.07 * work
+            j4Ref.current.rotation.x += Math.sin(raw * 13.7) * 0.04 * work
+          }
+        }
+      } else if (stationType === 'paint') {
+        // Arm extends to car then sweeps side-to-side like a paint robot
+        const extWork = 0.88
+        const sweep = Math.sin(raw * 2.0 + armPhase) * 0.48 // slow horizontal sweep
+        if (j1Ref.current) {
+          j1Ref.current.rotation.y = REST.j1y + (WORK.j1y - REST.j1y) * extWork + sweep
+          j1Ref.current.rotation.z = 0
+        }
+        if (j2Ref.current) j2Ref.current.rotation.x = REST.j2x + (WORK.j2x - REST.j2x) * extWork
+        if (j3Ref.current) j3Ref.current.rotation.x = REST.j3x + (WORK.j3x - REST.j3x) * extWork
+        if (j4Ref.current) {
+          j4Ref.current.rotation.x = REST.j4x + (WORK.j4x - REST.j4x) * extWork
+          // Wrist follows sweep (gun stays perpendicular to car surface)
+          j4Ref.current.rotation.z = Math.sin(raw * 2.0 + armPhase + 0.6) * 0.14
+        }
+      } else if (stationType === 'laser') {
+        // Stamp press: arm rises, pauses, then slams down, brief hold, rises again
+        const period = 2.2 // seconds per stamp cycle
+        const phase = (raw % period) / period // 0→1 in each cycle
+        // Quick downstroke in first 12% of cycle, hold until 25%, then lift
+        let stamp = 0
+        if (phase < 0.12) {
+          stamp = Math.sin((phase / 0.12) * Math.PI * 0.5) // 0 → 1 smooth
+        } else if (phase < 0.28) {
+          stamp = 1.0 // hold pressed
+        } else if (phase < 0.40) {
+          stamp = 1.0 - (phase - 0.28) / 0.12 // 1 → 0 lift
+        }
+        const baseWork = 0.82
+        if (j1Ref.current) {
+          j1Ref.current.rotation.y = REST.j1y + (WORK.j1y - REST.j1y) * baseWork
+          j1Ref.current.rotation.z = 0
+        }
+        if (j2Ref.current) j2Ref.current.rotation.x = REST.j2x + (WORK.j2x - REST.j2x) * (baseWork * 0.6 + stamp * 0.4)
+        if (j3Ref.current) j3Ref.current.rotation.x = REST.j3x + (WORK.j3x - REST.j3x) * (baseWork * 0.6 + stamp * 0.4)
+        if (j4Ref.current) {
+          j4Ref.current.rotation.x = REST.j4x + (WORK.j4x - REST.j4x) * stamp
+          j4Ref.current.rotation.z = 0
+        }
+      }
+      return
+    }
+
+    // ── Default idle / production animation ───────────────────────────────
     const speed = isProducing ? 0.65 : 0.35
-    const t = clock.getElapsedTime() * speed + armPhase
+    const t = raw * speed + armPhase
     const work = (Math.sin(t) + 1) / 2 // 0 = rest, 1 = working
 
-    if (j1Ref.current) j1Ref.current.rotation.y = REST.j1y + (WORK.j1y - REST.j1y) * work
+    if (j1Ref.current) {
+      j1Ref.current.rotation.y = REST.j1y + (WORK.j1y - REST.j1y) * work
+      j1Ref.current.rotation.z = 0
+    }
     if (j2Ref.current) j2Ref.current.rotation.x = REST.j2x + (WORK.j2x - REST.j2x) * work
     if (j3Ref.current) j3Ref.current.rotation.x = REST.j3x + (WORK.j3x - REST.j3x) * work
     if (j4Ref.current) {
       j4Ref.current.rotation.x = REST.j4x + (WORK.j4x - REST.j4x) * work
       if (work > 0.7) {
         // Tool vibration when fully engaged
-        j4Ref.current.rotation.z = Math.sin(clock.getElapsedTime() * 12) * 0.04 * work
-        j4Ref.current.rotation.x += Math.sin(clock.getElapsedTime() * 9.3) * 0.02 * work
+        j4Ref.current.rotation.z = Math.sin(raw * 12) * 0.04 * work
+        j4Ref.current.rotation.x += Math.sin(raw * 9.3) * 0.02 * work
       }
     }
   })
@@ -384,9 +468,9 @@ function IndustrialRobotArm({
 
                   {/* ── END EFFECTOR ── */}
                   <group position={[0, 0.52, 0]}>
-                    {stationType === 'weld' && <WeldingEffector isActive={isProducing} />}
-                    {stationType === 'paint' && <PaintEffector isActive={isProducing} accentColor={accentColor} />}
-                    {stationType === 'laser' && <LaserEffector isActive={isProducing} accentColor={accentColor} />}
+                    {stationType === 'weld' && <WeldingEffector isActive={isProducing || isActive} />}
+                    {stationType === 'paint' && <PaintEffector isActive={isProducing || isActive} accentColor={accentColor} />}
+                    {stationType === 'laser' && <LaserEffector isActive={isProducing || isActive} accentColor={accentColor} />}
                   </group>
                 </group>
               </group>

@@ -91,7 +91,10 @@ export default function FactoryScene({
           <FactoryLighting />
           <FactoryFloor />
           <FactoryBuilding />
-          <ConveyorBelt isProducing={!!productionJob} />
+          <ConveyorBelt
+            isProducing={!!productionJob}
+            activeStation={productionJob ? null : (builderPreview?.step ?? null)}
+          />
           <CrateWarehouse builtCount={totalCarCount} />
           <ParkingLot cars={cars} drivenCarNumber={driveModeState?.carNumber ?? null} />
           <FactoryProps />

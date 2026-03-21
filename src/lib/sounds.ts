@@ -265,3 +265,196 @@ export function playStationDing(): void {
     osc.stop(t + 0.45)
   } catch { /* ignore */ }
 }
+
+// ── Welding / chassis station sound ──────────────────────────────────────────
+// Buzzy arc oscillator with rapid AM modulation — sounds like electric welding.
+let weldNodes: { gain: GainNode; oscs: OscillatorNode[] } | null = null
+
+export function startWeldingSound(): () => void {
+  try {
+    const c = getCtx()
+    stopWeldingSound()
+
+    const master = c.createGain()
+    master.gain.setValueAtTime(0, c.currentTime)
+    master.gain.linearRampToValueAtTime(0.07, c.currentTime + 0.15)
+    master.connect(c.destination)
+
+    // Main arc oscillator
+    const arc = c.createOscillator()
+    arc.type = 'sawtooth'
+    arc.frequency.value = 140
+
+    // Bandpass to shape into metallic buzz
+    const filter = c.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.value = 900
+    filter.Q.value = 2.5
+
+    const arcGain = c.createGain()
+    arcGain.gain.value = 0.6
+
+    // LFO for rapid amplitude modulation (arc flicker at ~40 Hz)
+    const lfo = c.createOscillator()
+    lfo.type = 'sine'
+    lfo.frequency.value = 42
+    const lfoGain = c.createGain()
+    lfoGain.gain.value = 0.4
+    lfo.connect(lfoGain)
+    lfoGain.connect(arcGain.gain) // AM: gain oscillates around 0.6 ± 0.4
+
+    arc.connect(filter)
+    filter.connect(arcGain)
+    arcGain.connect(master)
+
+    // High harmonic shimmer (sparky)
+    const shimmer = c.createOscillator()
+    shimmer.type = 'square'
+    shimmer.frequency.value = 560
+    const shimGain = c.createGain()
+    shimGain.gain.value = 0.025
+    shimmer.connect(shimGain)
+    shimGain.connect(master)
+
+    arc.start()
+    lfo.start()
+    shimmer.start()
+
+    weldNodes = { gain: master, oscs: [arc, lfo, shimmer] }
+    return stopWeldingSound
+  } catch {
+    return () => {}
+  }
+}
+
+export function stopWeldingSound(): void {
+  if (!weldNodes) return
+  try {
+    const c = getCtx()
+    weldNodes.gain.gain.linearRampToValueAtTime(0, c.currentTime + 0.2)
+    const oscs = weldNodes.oscs
+    setTimeout(() => { oscs.forEach(o => { try { o.stop() } catch { /* stopped */ } }) }, 300)
+  } catch { /* ignore */ }
+  weldNodes = null
+}
+
+// ── Spray / paint station sound ───────────────────────────────────────────────
+// White noise through bandpass — airy hiss like a spray gun.
+let sprayNodes: { gain: GainNode; source: AudioBufferSourceNode } | null = null
+
+export function startSpraySound(): () => void {
+  try {
+    const c = getCtx()
+    stopSpraySound()
+
+    // 2-second looping white noise buffer
+    const bufSize = Math.floor(c.sampleRate * 2)
+    const buf = c.createBuffer(1, bufSize, c.sampleRate)
+    const data = buf.getChannelData(0)
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1
+
+    const source = c.createBufferSource()
+    source.buffer = buf
+    source.loop = true
+
+    // Shape noise into a hiss: remove low rumble + cap high harshness
+    const hi = c.createBiquadFilter()
+    hi.type = 'highpass'
+    hi.frequency.value = 2800
+
+    const lo = c.createBiquadFilter()
+    lo.type = 'lowpass'
+    lo.frequency.value = 9000
+
+    const gain = c.createGain()
+    gain.gain.setValueAtTime(0, c.currentTime)
+    gain.gain.linearRampToValueAtTime(0.13, c.currentTime + 0.22)
+
+    source.connect(hi)
+    hi.connect(lo)
+    lo.connect(gain)
+    gain.connect(c.destination)
+    source.start()
+
+    sprayNodes = { gain, source }
+    return stopSpraySound
+  } catch {
+    return () => {}
+  }
+}
+
+export function stopSpraySound(): void {
+  if (!sprayNodes) return
+  try {
+    const c = getCtx()
+    sprayNodes.gain.gain.linearRampToValueAtTime(0, c.currentTime + 0.3)
+    const src = sprayNodes.source
+    setTimeout(() => { try { src.stop() } catch { /* stopped */ } }, 400)
+  } catch { /* ignore */ }
+  sprayNodes = null
+}
+
+// ── Stamp / name station sound ────────────────────────────────────────────────
+// Percussive mechanical thud repeating every ~1.8s — like a stamp press.
+let stampInterval: ReturnType<typeof setInterval> | null = null
+
+function _playStampThud(): void {
+  try {
+    const c = getCtx()
+    const t = c.currentTime
+
+    // Noise burst (impact body)
+    const bufSize = Math.floor(c.sampleRate * 0.22)
+    const buf = c.createBuffer(1, bufSize, c.sampleRate)
+    const data = buf.getChannelData(0)
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1
+
+    const src = c.createBufferSource()
+    src.buffer = buf
+
+    const filter = c.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.setValueAtTime(1400, t)
+    filter.frequency.exponentialRampToValueAtTime(80, t + 0.18)
+
+    const gain = c.createGain()
+    gain.gain.setValueAtTime(0.28, t)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.20)
+
+    src.connect(filter)
+    filter.connect(gain)
+    gain.connect(c.destination)
+    src.start(t)
+    src.stop(t + 0.25)
+
+    // Metallic click on impact
+    const click = c.createOscillator()
+    click.type = 'square'
+    click.frequency.setValueAtTime(280, t)
+    click.frequency.exponentialRampToValueAtTime(55, t + 0.06)
+    const clickGain = c.createGain()
+    clickGain.gain.setValueAtTime(0.14, t)
+    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.09)
+    click.connect(clickGain)
+    clickGain.connect(c.destination)
+    click.start(t)
+    click.stop(t + 0.12)
+  } catch { /* ignore */ }
+}
+
+export function startStampSound(): () => void {
+  try {
+    _playStampThud()
+    stampInterval = setInterval(_playStampThud, 1800)
+    return stopStampSound
+  } catch {
+    return () => {}
+  }
+}
+
+export function stopStampSound(): void {
+  if (stampInterval !== null) {
+    clearInterval(stampInterval)
+    stampInterval = null
+  }
+}

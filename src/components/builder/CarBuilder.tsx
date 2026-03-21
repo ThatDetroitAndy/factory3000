@@ -6,6 +6,14 @@ import ColorPicker from './ColorPicker'
 import NameInput from './NameInput'
 import type { CarType } from '@/lib/types'
 import type { ProductionJob, CelebrationState, BuilderPreview } from '@/components/factory/FactoryScene'
+import {
+  startWeldingSound,
+  stopWeldingSound,
+  startSpraySound,
+  stopSpraySound,
+  startStampSound,
+  stopStampSound,
+} from '@/lib/sounds'
 
 interface CarBuilderProps {
   onClose: () => void
@@ -38,6 +46,26 @@ export default function CarBuilder({
   const [nameValid, setNameValid] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [building, setBuilding] = useState(false)
+
+  // Station sound effects — start when arriving at a station, stop when leaving
+  useEffect(() => {
+    let stop: (() => void) | null = null
+    if (step === 'chassis') stop = startWeldingSound()
+    else if (step === 'paint') stop = startSpraySound()
+    else if (step === 'name') stop = startStampSound()
+    return () => {
+      stop?.()
+    }
+  }, [step])
+
+  // Stop all station sounds on unmount (build submitted or closed)
+  useEffect(() => {
+    return () => {
+      stopWeldingSound()
+      stopSpraySound()
+      stopStampSound()
+    }
+  }, [])
 
   // Keep FactoryScene's 3D preview in sync with every selection
   useEffect(() => {
