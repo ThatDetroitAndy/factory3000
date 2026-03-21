@@ -27,6 +27,8 @@ interface CameraControlsProps {
   isProducing?: boolean
   /** Current builder station — when set, camera tracks the station */
   builderStep?: BuilderStep | null
+  /** Whether celebration overlay is active (disables orbit so CelebrationOverlay controls camera) */
+  isCelebrating?: boolean
 }
 
 export default function CameraControls({
@@ -34,6 +36,7 @@ export default function CameraControls({
   driveMode = false,
   isProducing = false,
   builderStep,
+  isCelebrating = false,
 }: CameraControlsProps) {
   const { camera } = useThree()
   const controlsRef = useRef<any>(null)
@@ -93,7 +96,7 @@ export default function CameraControls({
     }
   })
 
-  if (driveMode || isProducing || !!builderStep) return null
+  if (driveMode || isProducing || !!builderStep || isCelebrating) return null
 
   return (
     <OrbitControls

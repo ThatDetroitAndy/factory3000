@@ -140,6 +140,7 @@ export default function FactoryScene({
           isProducing={!!productionJob}
           driveMode={isDriving}
           builderStep={builderPreview?.step ?? null}
+          isCelebrating={!!celebration && !isDriving}
         />
       </Canvas>
     </div>
