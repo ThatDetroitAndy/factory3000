@@ -15,6 +15,7 @@ export default function CarNameTag({ name, carNumber, position }: CarNameTagProp
       center
       distanceFactor={15}
       occlude={false}
+      zIndexRange={[10, 0]}
       style={{ pointerEvents: 'none' }}
     >
       <div className="bg-black/70 text-white px-2 py-1 rounded text-xs whitespace-nowrap select-none">
