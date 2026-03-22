@@ -120,6 +120,8 @@ export default function FactoryScene({
             <CelebrationOverlay
               name={celebration.name}
               carNumber={celebration.carNumber}
+              carType={celebration.carType}
+              color={celebration.color}
               position={celebration.position}
               onStartDrive={onStartDrive}
             />

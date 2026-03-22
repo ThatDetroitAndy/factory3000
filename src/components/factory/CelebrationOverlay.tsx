@@ -5,10 +5,14 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { Html, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { playFanfare } from '@/lib/sounds'
+import CarModel from './CarModel'
+import type { CarType } from '@/lib/types'
 
 interface CelebrationOverlayProps {
   name: string
   carNumber: number
+  carType: CarType
+  color: string
   position: [number, number, number]
   onStartDrive?: () => void
 }
@@ -17,16 +21,17 @@ interface CelebrationOverlayProps {
  * 3D celebration that appears above a newly built car.
  * Big floating name, sparkle effects, "YOUR CAR IS READY" text.
  */
-export default function CelebrationOverlay({ name, carNumber, position, onStartDrive }: CelebrationOverlayProps) {
+export default function CelebrationOverlay({ name, carNumber, carType, color, position, onStartDrive }: CelebrationOverlayProps) {
   const groupRef = useRef<THREE.Group>(null)
+  const carRef = useRef<THREE.Group>(null)
   const time = useRef(0)
   const { camera } = useThree()
 
-  // Smooth camera state for celebration flyback
-  // Cars face +Z, so camera goes at +Z offset (in front of car) looking back toward -Z to see the front
+  // Camera: orbit slowly around the car for a dramatic reveal
+  // Start from the production camera's last position, sweep to a hero angle
   const camStart = useRef(new THREE.Vector3())
-  const camTarget = useRef(new THREE.Vector3(position[0] + 6, position[1] + 8, position[2] + 16))
-  const lookTarget = useRef(new THREE.Vector3(position[0], position[1] + 3, position[2]))
+  const camTarget = useRef(new THREE.Vector3(position[0] + 8, position[1] + 5, position[2] + 12))
+  const lookTarget = useRef(new THREE.Vector3(position[0], position[1] + 1.5, position[2]))
   const camProgress = useRef(0)
 
   // Play fanfare once on mount, capture current camera position for smooth lerp
@@ -47,6 +52,11 @@ export default function CelebrationOverlay({ name, carNumber, position, onStartD
       camera.lookAt(lookTarget.current)
     }
 
+    // Slow turntable rotation on the car for a reveal effect
+    if (carRef.current) {
+      carRef.current.rotation.y = Math.sin(time.current * 0.5) * 0.4
+    }
+
     if (groupRef.current) {
       // Gentle float animation
       groupRef.current.position.y = position[1] + 5 + Math.sin(time.current * 2) * 0.3
@@ -54,6 +64,12 @@ export default function CelebrationOverlay({ name, carNumber, position, onStartD
   })
 
   return (
+    <>
+    {/* THE CAR — the star of the show */}
+    <group ref={carRef} position={[position[0], position[1], position[2]]}>
+      <CarModel carType={carType} color={color} scale={1.3} />
+    </group>
+
     <group ref={groupRef} position={[position[0], position[1] + 5, position[2]]}>
       {/* Big car name */}
       <Text
@@ -147,6 +163,7 @@ export default function CelebrationOverlay({ name, carNumber, position, onStartD
         </div>
       </Html>
     </group>
+    </>
   )
 }
 
