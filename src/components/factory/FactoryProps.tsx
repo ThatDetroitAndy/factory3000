@@ -2,6 +2,7 @@
 
 import * as THREE from 'three'
 import { isMobileDevice } from '@/lib/isMobile'
+import { RigidBody, CylinderCollider } from '@react-three/rapier'
 
 /** Low-poly tree — chunky trunk + round canopy */
 function Tree({ position, scale = 1, color = '#4CAF50' }: { position: [number, number, number]; scale?: number; color?: string }) {
@@ -213,17 +214,46 @@ export default function FactoryProps() {
       {!mobile && <Bush position={[-55, 0, -60]} color="#81C784" />}
       {!mobile && <Bush position={[55, 0, -55]} />}
 
-      {/* Tire stacks near the factory */}
-      <TireStack position={[15, 0, -5]} />
-      {!mobile && <TireStack position={[16.5, 0, -5]} />}
-      <TireStack position={[-15, 0, 5]} />
+      {/* Tire stacks near the factory — dynamic physics, cars can knock them! */}
+      <RigidBody type="dynamic" position={[15, 0, -5]} mass={10} colliders="hull" angularDamping={0.5}>
+        <TireStack position={[0, 0, 0]} />
+      </RigidBody>
+      {!mobile && (
+        <RigidBody type="dynamic" position={[16.5, 0, -5]} mass={10} colliders="hull" angularDamping={0.5}>
+          <TireStack position={[0, 0, 0]} />
+        </RigidBody>
+      )}
+      <RigidBody type="dynamic" position={[-15, 0, 5]} mass={10} colliders="hull" angularDamping={0.5}>
+        <TireStack position={[0, 0, 0]} />
+      </RigidBody>
 
-      {/* Oil barrels — clustered */}
-      <Barrel position={[18, 0, 10]} color="#4A90D9" />
-      <Barrel position={[18.5, 0, 11]} color="#FF6B4A" />
-      {!mobile && <Barrel position={[19, 0, 9.5]} color="#4A90D9" />}
-      {!mobile && <Barrel position={[-18, 0, -15]} color="#FFD700" />}
-      {!mobile && <Barrel position={[-17, 0, -15.5]} color="#4A90D9" />}
+      {/* Oil barrels — dynamic physics with cylinder colliders so they roll! */}
+      <RigidBody type="dynamic" position={[18, 0, 10]} mass={20} colliders={false} angularDamping={0.3}>
+        <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
+        <Barrel position={[0, 0, 0]} color="#4A90D9" />
+      </RigidBody>
+      <RigidBody type="dynamic" position={[18.5, 0, 11]} mass={20} colliders={false} angularDamping={0.3}>
+        <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
+        <Barrel position={[0, 0, 0]} color="#FF6B4A" />
+      </RigidBody>
+      {!mobile && (
+        <RigidBody type="dynamic" position={[19, 0, 9.5]} mass={20} colliders={false} angularDamping={0.3}>
+          <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
+          <Barrel position={[0, 0, 0]} color="#4A90D9" />
+        </RigidBody>
+      )}
+      {!mobile && (
+        <RigidBody type="dynamic" position={[-18, 0, -15]} mass={20} colliders={false} angularDamping={0.3}>
+          <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
+          <Barrel position={[0, 0, 0]} color="#FFD700" />
+        </RigidBody>
+      )}
+      {!mobile && (
+        <RigidBody type="dynamic" position={[-17, 0, -15.5]} mass={20} colliders={false} angularDamping={0.3}>
+          <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
+          <Barrel position={[0, 0, 0]} color="#4A90D9" />
+        </RigidBody>
+      )}
 
       {/* Toolboxes */}
       <Toolbox position={[12, 0, -8]} />
@@ -236,13 +266,33 @@ export default function FactoryProps() {
       {!mobile && <Flag position={[30, 0, -50]} color="#C47AFF" />}
       {!mobile && <Flag position={[0, 0, 80]} color="#FF6B6B" />}
 
-      {/* Traffic cones — around the work area */}
-      <Cone position={[-8, 0, 20]} />
-      <Cone position={[8, 0, 20]} />
-      {!mobile && <Cone position={[-8, 0, -45]} />}
-      {!mobile && <Cone position={[8, 0, -45]} />}
-      {!mobile && <Cone position={[-3, 0, 25]} />}
-      {!mobile && <Cone position={[3, 0, 25]} />}
+      {/* Traffic cones — light and tumble-friendly, cars send them flying! */}
+      <RigidBody type="dynamic" position={[-8, 0, 20]} mass={2} colliders="hull" angularDamping={0.1}>
+        <Cone position={[0, 0, 0]} />
+      </RigidBody>
+      <RigidBody type="dynamic" position={[8, 0, 20]} mass={2} colliders="hull" angularDamping={0.1}>
+        <Cone position={[0, 0, 0]} />
+      </RigidBody>
+      {!mobile && (
+        <RigidBody type="dynamic" position={[-8, 0, -45]} mass={2} colliders="hull" angularDamping={0.1}>
+          <Cone position={[0, 0, 0]} />
+        </RigidBody>
+      )}
+      {!mobile && (
+        <RigidBody type="dynamic" position={[8, 0, -45]} mass={2} colliders="hull" angularDamping={0.1}>
+          <Cone position={[0, 0, 0]} />
+        </RigidBody>
+      )}
+      {!mobile && (
+        <RigidBody type="dynamic" position={[-3, 0, 25]} mass={2} colliders="hull" angularDamping={0.1}>
+          <Cone position={[0, 0, 0]} />
+        </RigidBody>
+      )}
+      {!mobile && (
+        <RigidBody type="dynamic" position={[3, 0, 25]} mass={2} colliders="hull" angularDamping={0.1}>
+          <Cone position={[0, 0, 0]} />
+        </RigidBody>
+      )}
 
       {/* Warning lights on corners */}
       <WarningLight position={[-30, 0, 28]} />

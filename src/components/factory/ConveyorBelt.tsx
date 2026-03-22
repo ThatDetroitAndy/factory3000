@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { RigidBody, CuboidCollider } from '@react-three/rapier'
 
 export default function ConveyorBelt({
   isProducing = false,
@@ -17,6 +18,16 @@ export default function ConveyorBelt({
 
   return (
     <group position={[0, 0, -10]}>
+      {/* Fixed colliders for belt structure — cars can't drive through */}
+      <RigidBody type="fixed" colliders={false}>
+        {/* Belt surface top */}
+        <CuboidCollider args={[BELT_WIDTH / 2, 0.1, BELT_LENGTH / 2]} position={[0, BELT_HEIGHT, 0]} />
+        {/* Left side rail */}
+        <CuboidCollider args={[0.1, 0.4, BELT_LENGTH / 2]} position={[-BELT_WIDTH / 2 - 0.4, BELT_HEIGHT + 0.5, 0]} />
+        {/* Right side rail */}
+        <CuboidCollider args={[0.1, 0.4, BELT_LENGTH / 2]} position={[BELT_WIDTH / 2 + 0.4, BELT_HEIGHT + 0.5, 0]} />
+      </RigidBody>
+
       {/* Belt surface — dark rubber with yellow safety stripes */}
       <mesh position={[0, BELT_HEIGHT, 0]} receiveShadow castShadow>
         <boxGeometry args={[BELT_WIDTH, 0.2, BELT_LENGTH]} />

@@ -1,5 +1,7 @@
 'use client'
 
+import { RigidBody, CuboidCollider } from '@react-three/rapier'
+
 /**
  * Factory building modeled after Andy's real factory at
  * 5938 Linsdale, Detroit MI 48204.
@@ -15,6 +17,17 @@
 export default function FactoryBuilding() {
   return (
     <group position={[0, 0, -25]}>
+      {/* Fixed wall colliders — cars bounce off instead of driving through */}
+      <RigidBody type="fixed" colliders={false}>
+        {/* Front wall */}
+        <CuboidCollider args={[31.5, 10, 0.75]} position={[0, 10, 38]} />
+        {/* Left wall */}
+        <CuboidCollider args={[0.75, 6, 42.5]} position={[-31.5, 6, -5]} />
+        {/* Right wall */}
+        <CuboidCollider args={[0.75, 6, 42.5]} position={[31.5, 6, -5]} />
+        {/* Back wall */}
+        <CuboidCollider args={[31.5, 6, 0.75]} position={[0, 6, -48]} />
+      </RigidBody>
       {/* ============================================ */}
       {/*  FOUNDATION                                  */}
       {/* ============================================ */}
