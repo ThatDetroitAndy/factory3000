@@ -1,8 +1,10 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html, Text } from '@react-three/drei'
+import { RigidBody, CuboidCollider } from '@react-three/rapier'
+import type { RapierRigidBody } from '@react-three/rapier'
 import * as THREE from 'three'
 import { playFanfare } from '@/lib/sounds'
 import CarModel from './CarModel'
@@ -18,27 +20,33 @@ interface CelebrationOverlayProps {
 }
 
 /**
- * 3D celebration that appears above a newly built car.
+ * 3D celebration that appears when a car finishes the conveyor belt.
+ * The car DROPS from belt height with gravity, bounces on landing, then slow turntable.
  * Big floating name, sparkle effects, "YOUR CAR IS READY" text.
  */
 export default function CelebrationOverlay({ name, carNumber, carType, color, position, onStartDrive }: CelebrationOverlayProps) {
+  const bodyRef = useRef<RapierRigidBody>(null)
+  const innerCarRef = useRef<THREE.Group>(null)
   const groupRef = useRef<THREE.Group>(null)
-  const carRef = useRef<THREE.Group>(null)
   const time = useRef(0)
   const { camera } = useThree()
 
-  // Camera: orbit slowly around the car for a dramatic reveal
-  // Start from the production camera's last position, sweep to a hero angle
+  // After the car settles on the ground, start the turntable rotation
+  const [settled, setSettled] = useState(false)
+
+  // Camera: sweep from production end position to a hero angle
   const camStart = useRef(new THREE.Vector3())
   const camTarget = useRef(new THREE.Vector3(position[0] + 8, position[1] + 5, position[2] + 12))
   const lookTarget = useRef(new THREE.Vector3(position[0], position[1] + 1.5, position[2]))
   const camProgress = useRef(0)
 
-  // Play fanfare once on mount, capture current camera position for smooth lerp
   useEffect(() => {
     playFanfare()
     camStart.current.copy(camera.position)
     camProgress.current = 0
+    // Physics drop takes ~1.2s to settle — start turntable after
+    const t = setTimeout(() => setSettled(true), 1800)
+    return () => clearTimeout(t)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, delta) => {
@@ -52,23 +60,34 @@ export default function CelebrationOverlay({ name, carNumber, carType, color, po
       camera.lookAt(lookTarget.current)
     }
 
-    // Slow turntable rotation on the car for a reveal effect
-    if (carRef.current) {
-      carRef.current.rotation.y = Math.sin(time.current * 0.5) * 0.4
+    // Slow turntable on the inner car group once settled
+    if (settled && innerCarRef.current) {
+      innerCarRef.current.rotation.y += delta * 0.55
     }
 
     if (groupRef.current) {
-      // Gentle float animation
       groupRef.current.position.y = position[1] + 5 + Math.sin(time.current * 2) * 0.3
     }
   })
 
   return (
     <>
-    {/* THE CAR — the star of the show */}
-    <group ref={carRef} position={[position[0], position[1], position[2]]}>
-      <CarModel carType={carType} color={color} scale={1.3} />
-    </group>
+    {/* THE CAR — drops from belt height under gravity, bounces, then turntable reveal */}
+    <RigidBody
+      ref={bodyRef}
+      position={[position[0], position[1] + 4, position[2]]}
+      lockRotations
+      restitution={0.35}
+      friction={0.9}
+      linearDamping={0.4}
+      colliders={false}
+    >
+      {/* Manual collider at car body center — wheels bottom at ~y=0, top at ~y=1.5 at scale 1.3 */}
+      <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0.5, 0]} />
+      <group ref={innerCarRef}>
+        <CarModel carType={carType} color={color} scale={1.3} />
+      </group>
+    </RigidBody>
 
     <group ref={groupRef} position={[position[0], position[1] + 5, position[2]]}>
       {/* Big car name */}

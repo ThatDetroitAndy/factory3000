@@ -1,5 +1,7 @@
 'use client'
 
+import { RigidBody, CuboidCollider } from '@react-three/rapier'
+
 /**
  * Just the ground planes — the factory building structure
  * is now handled by FactoryBuilding.tsx
@@ -7,6 +9,11 @@
 export default function FactoryFloor() {
   return (
     <group>
+      {/* Invisible physics ground — top surface at y=0, huge half-extents cover the whole world */}
+      <RigidBody type="fixed" colliders={false}>
+        <CuboidCollider args={[1000, 0.1, 1000]} position={[0, -0.1, 0]} />
+      </RigidBody>
+
       {/* Main ground — warm terracotta/sand, huge so edges never visible */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.1, 0]}>
         <planeGeometry args={[2000, 2000]} />

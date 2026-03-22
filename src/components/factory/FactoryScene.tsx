@@ -3,6 +3,7 @@
 import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
+import { Physics } from '@react-three/rapier'
 import type { Car, CarType } from '@/lib/types'
 import { isMobileDevice } from '@/lib/isMobile'
 import FactoryFloor from './FactoryFloor'
@@ -86,55 +87,58 @@ export default function FactoryScene({
         <fog attach="fog" args={['#C8E8F8', 200, 800]} />
 
         <Suspense fallback={null}>
-          <Environment preset="sunset" environmentIntensity={0.4} />
+          {/* gravity=-20 feels weighty but toylike — faster than real world, satisfying landings */}
+          <Physics gravity={[0, -20, 0]} timeStep="vary">
+            <Environment preset="sunset" environmentIntensity={0.4} />
 
-          <FactoryLighting />
-          <FactoryFloor />
-          <FactoryBuilding />
-          <ConveyorBelt
-            isProducing={!!productionJob}
-            activeStation={productionJob ? null : (builderPreview?.step ?? null)}
-          />
-          <CrateWarehouse builtCount={totalCarCount} />
-          <ParkingLot cars={cars} drivenCarNumber={driveModeState?.carNumber ?? null} />
-          <FactoryProps />
-
-          {/* Builder mode: live car preview on the conveyor belt */}
-          {builderPreview && !productionJob && (
-            <BuilderCar
-              step={builderPreview.step}
-              carType={builderPreview.carType}
-              color={builderPreview.color}
+            <FactoryLighting />
+            <FactoryFloor />
+            <FactoryBuilding />
+            <ConveyorBelt
+              isProducing={!!productionJob}
+              activeStation={productionJob ? null : (builderPreview?.step ?? null)}
             />
-          )}
+            <CrateWarehouse builtCount={totalCarCount} />
+            <ParkingLot cars={cars} drivenCarNumber={driveModeState?.carNumber ?? null} />
+            <FactoryProps />
 
-          {productionJob && (
-            <ProductionCar
-              carType={productionJob.carType}
-              color={productionJob.color}
-              onComplete={() => onProductionComplete?.()}
-            />
-          )}
+            {/* Builder mode: live car preview on the conveyor belt */}
+            {builderPreview && !productionJob && (
+              <BuilderCar
+                step={builderPreview.step}
+                carType={builderPreview.carType}
+                color={builderPreview.color}
+              />
+            )}
 
-          {celebration && !isDriving && (
-            <CelebrationOverlay
-              name={celebration.name}
-              carNumber={celebration.carNumber}
-              carType={celebration.carType}
-              color={celebration.color}
-              position={celebration.position}
-              onStartDrive={onStartDrive}
-            />
-          )}
+            {productionJob && (
+              <ProductionCar
+                carType={productionJob.carType}
+                color={productionJob.color}
+                onComplete={() => onProductionComplete?.()}
+              />
+            )}
 
-          {isDriving && driveModeState && (
-            <DriveMode
-              carType={driveModeState.carType}
-              color={driveModeState.color}
-              startPosition={driveModeState.startPosition}
-              onExit={() => onExitDrive?.()}
-            />
-          )}
+            {celebration && !isDriving && (
+              <CelebrationOverlay
+                name={celebration.name}
+                carNumber={celebration.carNumber}
+                carType={celebration.carType}
+                color={celebration.color}
+                position={celebration.position}
+                onStartDrive={onStartDrive}
+              />
+            )}
+
+            {isDriving && driveModeState && (
+              <DriveMode
+                carType={driveModeState.carType}
+                color={driveModeState.color}
+                startPosition={driveModeState.startPosition}
+                onExit={() => onExitDrive?.()}
+              />
+            )}
+          </Physics>
         </Suspense>
 
         <CameraControls

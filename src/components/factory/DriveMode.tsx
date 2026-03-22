@@ -2,6 +2,8 @@
 
 import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
+import { RigidBody, CuboidCollider } from '@react-three/rapier'
+import type { RapierRigidBody } from '@react-three/rapier'
 import * as THREE from 'three'
 import CarModel from './CarModel'
 import type { CarType } from '@/lib/types'
@@ -15,30 +17,30 @@ interface DriveModeProps {
   onExit: () => void
 }
 
-// Per-vehicle physics profiles — each car feels distinct
+// Per-vehicle profiles — drive feel (velocity) + physics body (mass, damping)
+// go-kart: light, snappy, high turnrate; pickup: medium; SUV: heavy/planted
 const VEHICLE_PROFILES = {
-  car1: { topSpeed: 22, acceleration: 18, brakeForce: 35, friction: 9,  reverseMax: 10, maxTurnRate: 2.8 }, // go-kart: zippy, responsive
-  car2: { topSpeed: 16, acceleration: 11, brakeForce: 24, friction: 6,  reverseMax: 7,  maxTurnRate: 2.2 }, // pickup: solid, steady
-  car3: { topSpeed: 12, acceleration: 7,  brakeForce: 16, friction: 4,  reverseMax: 5,  maxTurnRate: 2.0 }, // SUV: heavy, powerful
+  car1: { topSpeed: 22, acceleration: 18, brakeForce: 35, friction: 9,  reverseMax: 10, maxTurnRate: 2.8, mass: 60,  linearDamping: 1.2, angularDamping: 12 },
+  car2: { topSpeed: 16, acceleration: 11, brakeForce: 24, friction: 6,  reverseMax: 7,  maxTurnRate: 2.2, mass: 140, linearDamping: 1.5, angularDamping: 15 },
+  car3: { topSpeed: 12, acceleration: 7,  brakeForce: 16, friction: 4,  reverseMax: 5,  maxTurnRate: 2.0, mass: 220, linearDamping: 1.8, angularDamping: 18 },
 } as const
 
 export default function DriveMode({ carType, color, startPosition, onExit }: DriveModeProps) {
-  const groupRef = useRef<THREE.Group>(null)
+  const bodyRef = useRef<RapierRigidBody>(null)
   const { camera } = useThree()
+  const p = VEHICLE_PROFILES[carType]
 
-  // Physics state
+  // Velocity is still tracked as a scalar — same tuned feel as before
   const velocity = useRef(0)
-  const yaw = useRef(0)
-  const pos = useRef(new THREE.Vector3(...startPosition))
 
   // Camera smoothing
   const camPos = useRef(new THREE.Vector3())
   const camLookAt = useRef(new THREE.Vector3())
+  const pos = useRef(new THREE.Vector3(...startPosition))
 
   // Horn debounce
   const hornWasPressed = useRef(false)
 
-  // Keyboard listeners
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       switch (e.code) {
@@ -61,13 +63,11 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
     }
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
-
-    // Start engine sound
     startEngine()
 
     // Init camera behind car
-    const dir = new THREE.Vector3(Math.sin(yaw.current), 0, Math.cos(yaw.current))
-    camPos.current.copy(pos.current).addScaledVector(dir, -10).add(new THREE.Vector3(0, 5, 0))
+    const startFwd = new THREE.Vector3(0, 0, 1)
+    camPos.current.copy(pos.current).addScaledVector(startFwd, -10).add(new THREE.Vector3(0, 5, 0))
     camLookAt.current.copy(pos.current).add(new THREE.Vector3(0, 1.5, 0))
     camera.position.copy(camPos.current)
     camera.lookAt(camLookAt.current)
@@ -75,41 +75,30 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
     return () => {
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
-      // Reset inputs on unmount so nothing sticks
-      driveInput.forward  = false
-      driveInput.backward = false
-      driveInput.left     = false
-      driveInput.right    = false
-      driveInput.horn     = false
+      driveInput.forward = driveInput.backward = driveInput.left = driveInput.right = driveInput.horn = false
       stopEngine()
     }
   }, [camera, onExit])
 
   useFrame((_, delta) => {
-    if (!groupRef.current) return
-    const p = VEHICLE_PROFILES[carType]
+    if (!bodyRef.current) return
 
-    // --- Acceleration / braking physics ---
+    // ── Velocity logic (same tuning as before) ──────────────────────────────
     if (driveInput.forward) {
       if (velocity.current < 0) {
-        // Braking hard from reverse
         velocity.current += p.brakeForce * delta
         if (velocity.current > 0) velocity.current = 0
       } else {
-        // Accelerating forward
         velocity.current += p.acceleration * delta
       }
     } else if (driveInput.backward) {
       if (velocity.current > 0.1) {
-        // Braking hard from forward
         velocity.current -= p.brakeForce * delta
         if (velocity.current < 0) velocity.current = 0
       } else {
-        // Reversing
         velocity.current -= p.acceleration * 0.55 * delta
       }
     } else {
-      // Coasting — friction brings velocity to zero
       if (velocity.current > 0) {
         velocity.current -= p.friction * delta
         if (velocity.current < 0) velocity.current = 0
@@ -118,54 +107,72 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
         if (velocity.current > 0) velocity.current = 0
       }
     }
-
-    // Clamp to speed limits
     velocity.current = THREE.MathUtils.clamp(velocity.current, -p.reverseMax, p.topSpeed)
 
-    // --- Speed-proportional turning: tight at low speed, wide at high speed ---
+    // ── Get forward direction from Rapier body rotation ──────────────────────
+    const rot = bodyRef.current.rotation()
+    const quat = new THREE.Quaternion(rot.x, rot.y, rot.z, rot.w)
+    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(quat)
+    forward.y = 0
+    if (forward.lengthSq() > 0.001) forward.normalize()
+
+    // ── Apply velocity to physics body, preserve y for gravity ──────────────
+    const linvel = bodyRef.current.linvel()
+    bodyRef.current.setLinvel(
+      { x: forward.x * velocity.current, y: linvel.y, z: forward.z * velocity.current },
+      true
+    )
+
+    // ── Speed-proportional steering — set angular velocity on Y ─────────────
+    let angY = 0
     if (Math.abs(velocity.current) > 0.3) {
       const speedFactor = Math.min(1, Math.abs(velocity.current) / p.topSpeed)
-      // Turn rate is tighter at low speed (1.0x) and wider at high speed (0.45x)
       const turnRate = p.maxTurnRate * (1 - 0.55 * speedFactor)
       const turnDir = velocity.current > 0 ? 1 : -1
-      if (driveInput.left)  yaw.current += turnRate * delta * turnDir
-      if (driveInput.right) yaw.current -= turnRate * delta * turnDir
+      if (driveInput.left)  angY =  turnRate * turnDir
+      if (driveInput.right) angY = -turnRate * turnDir
     }
+    bodyRef.current.setAngvel({ x: 0, y: angY, z: 0 }, true)
 
-    // Move
-    const forward = new THREE.Vector3(Math.sin(yaw.current), 0, Math.cos(yaw.current))
-    pos.current.addScaledVector(forward, velocity.current * delta)
+    // ── Engine sound ─────────────────────────────────────────────────────────
+    updateEngineSpeed(Math.abs(velocity.current) / p.topSpeed)
 
-    // Apply to mesh
-    groupRef.current.position.copy(pos.current)
-    groupRef.current.rotation.y = yaw.current
-
-    // Engine sound — normalize to this vehicle's top speed
-    const speedNorm = Math.abs(velocity.current) / p.topSpeed
-    updateEngineSpeed(speedNorm)
-
-    // Horn
-    if (driveInput.horn && !hornWasPressed.current) {
-      playHorn()
-      hornWasPressed.current = true
-    }
+    // ── Horn ─────────────────────────────────────────────────────────────────
+    if (driveInput.horn && !hornWasPressed.current) { playHorn(); hornWasPressed.current = true }
     if (!driveInput.horn) hornWasPressed.current = false
 
-    // Third-person camera: sit 10 units behind and 5 above
+    // ── Third-person camera ──────────────────────────────────────────────────
+    const translation = bodyRef.current.translation()
+    pos.current.set(translation.x, translation.y, translation.z)
+
     const camOffset = forward.clone().multiplyScalar(-10).add(new THREE.Vector3(0, 5, 0))
     const targetCamPos = pos.current.clone().add(camOffset)
     const targetLookAt = pos.current.clone().add(new THREE.Vector3(0, 1.5, 0))
 
     camPos.current.lerp(targetCamPos, 6 * delta)
     camLookAt.current.lerp(targetLookAt, 6 * delta)
-
     camera.position.copy(camPos.current)
     camera.lookAt(camLookAt.current)
   })
 
+  // Spawn 1.5 units above ground so the car drops with a satisfying plop on entry
+  const spawnY = startPosition[1] + 1.5
+
   return (
-    <group ref={groupRef} position={startPosition}>
+    <RigidBody
+      ref={bodyRef}
+      position={[startPosition[0], spawnY, startPosition[2]]}
+      enabledRotations={[false, true, false]}
+      mass={p.mass}
+      linearDamping={p.linearDamping}
+      angularDamping={p.angularDamping}
+      restitution={0.05}
+      friction={1.2}
+      colliders={false}
+    >
+      {/* Collider at car body center — snug fit so wheels visually touch ground */}
+      <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0.5, 0]} />
       <CarModel carType={carType} color={color} scale={1.3} />
-    </group>
+    </RigidBody>
   )
 }
