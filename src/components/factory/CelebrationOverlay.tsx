@@ -1,10 +1,8 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html, Text } from '@react-three/drei'
-import { RigidBody, CuboidCollider } from '@react-three/rapier'
-import type { RapierRigidBody } from '@react-three/rapier'
 import * as THREE from 'three'
 import { playFanfare } from '@/lib/sounds'
 import CarModel from './CarModel'
@@ -21,32 +19,30 @@ interface CelebrationOverlayProps {
 
 /**
  * 3D celebration that appears when a car finishes the conveyor belt.
- * The car DROPS from belt height with gravity, bounces on landing, then slow turntable.
+ * Car drops from belt height with a bounce animation, then slow turntable reveal.
  * Big floating name, sparkle effects, "YOUR CAR IS READY" text.
  */
 export default function CelebrationOverlay({ name, carNumber, carType, color, position, onStartDrive }: CelebrationOverlayProps) {
-  const bodyRef = useRef<RapierRigidBody>(null)
+  const carGroupRef = useRef<THREE.Group>(null)
   const innerCarRef = useRef<THREE.Group>(null)
   const groupRef = useRef<THREE.Group>(null)
   const time = useRef(0)
   const { camera } = useThree()
 
-  // After the car settles on the ground, start the turntable rotation
-  const [settled, setSettled] = useState(false)
+  // Animated drop: car starts at belt height, drops to ground with bounce
+  const dropStartY = 3 // start 3 units above ground
+  const groundY = 0    // wheels on ground
 
   // Camera: sweep from production end position to a hero angle
   const camStart = useRef(new THREE.Vector3())
-  const camTarget = useRef(new THREE.Vector3(position[0] + 8, position[1] + 5, position[2] + 12))
-  const lookTarget = useRef(new THREE.Vector3(position[0], position[1] + 1.5, position[2]))
+  const camTarget = useRef(new THREE.Vector3(position[0] + 8, 5, position[2] + 12))
+  const lookTarget = useRef(new THREE.Vector3(position[0], 1.5, position[2]))
   const camProgress = useRef(0)
 
   useEffect(() => {
     playFanfare()
     camStart.current.copy(camera.position)
     camProgress.current = 0
-    // Physics drop takes ~1.2s to settle — start turntable after
-    const t = setTimeout(() => setSettled(true), 1800)
-    return () => clearTimeout(t)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, delta) => {
@@ -60,34 +56,48 @@ export default function CelebrationOverlay({ name, carNumber, carType, color, po
       camera.lookAt(lookTarget.current)
     }
 
-    // Slow turntable on the inner car group once settled
-    if (settled && innerCarRef.current) {
+    // Animated drop with bounce — takes ~1.2s to settle
+    if (carGroupRef.current) {
+      const dropDuration = 0.6  // time to hit ground
+      const bounceDuration = 0.4
+      const t = time.current
+
+      let y: number
+      if (t < dropDuration) {
+        // Accelerating drop (gravity feel)
+        const progress = t / dropDuration
+        y = dropStartY * (1 - progress * progress) // quadratic ease-in
+      } else if (t < dropDuration + bounceDuration) {
+        // Bounce up and back down
+        const bounceT = (t - dropDuration) / bounceDuration
+        const bounceHeight = 0.6 // small satisfying bounce
+        y = groundY + Math.sin(bounceT * Math.PI) * bounceHeight
+      } else {
+        // Settled on ground
+        y = groundY
+      }
+
+      carGroupRef.current.position.y = y
+    }
+
+    // Slow turntable rotation after settling
+    if (time.current > 1.0 && innerCarRef.current) {
       innerCarRef.current.rotation.y += delta * 0.55
     }
 
     if (groupRef.current) {
-      groupRef.current.position.y = position[1] + 5 + Math.sin(time.current * 2) * 0.3
+      groupRef.current.position.y = 5 + Math.sin(time.current * 2) * 0.3
     }
   })
 
   return (
     <>
-    {/* THE CAR — drops from belt height under gravity, bounces, then turntable reveal */}
-    <RigidBody
-      ref={bodyRef}
-      position={[position[0], position[1] + 4, position[2]]}
-      lockRotations
-      restitution={0.35}
-      friction={0.9}
-      linearDamping={0.4}
-      colliders={false}
-    >
-      {/* Manual collider at car body center — wheels bottom at ~y=0, top at ~y=1.5 at scale 1.3 */}
-      <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0.5, 0]} />
+    {/* THE CAR — animated drop from belt height, bounce, then turntable */}
+    <group ref={carGroupRef} position={[position[0], dropStartY, position[2]]}>
       <group ref={innerCarRef}>
         <CarModel carType={carType} color={color} scale={1.3} />
       </group>
-    </RigidBody>
+    </group>
 
     <group ref={groupRef} position={[position[0], position[1] + 5, position[2]]}>
       {/* Big car name */}
