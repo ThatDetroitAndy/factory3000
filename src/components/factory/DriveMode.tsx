@@ -155,8 +155,8 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
     camera.lookAt(camLookAt.current)
   })
 
-  // Spawn 1.5 units above ground so the car drops with a satisfying plop on entry
-  const spawnY = startPosition[1] + 1.5
+  // Spawn 0.5 units above ground — collider bottom is at y=0 so minimal drop needed
+  const spawnY = startPosition[1] + 0.5
 
   return (
     <RigidBody
@@ -171,7 +171,7 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
       colliders={false}
     >
       {/* Collider at car body center — snug fit so wheels visually touch ground */}
-      <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0.5, 0]} />
+      <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0.65, 0]} />
       <CarModel carType={carType} color={color} scale={1.3} />
     </RigidBody>
   )

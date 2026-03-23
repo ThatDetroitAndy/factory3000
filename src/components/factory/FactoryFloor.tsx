@@ -9,9 +9,9 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier'
 export default function FactoryFloor() {
   return (
     <group>
-      {/* Invisible physics ground — top surface at y=0, huge half-extents cover the whole world */}
+      {/* Invisible physics ground — top surface at y=-0.1, matching the visual ground mesh */}
       <RigidBody type="fixed" colliders={false}>
-        <CuboidCollider args={[1000, 0.1, 1000]} position={[0, -0.1, 0]} />
+        <CuboidCollider args={[1000, 0.1, 1000]} position={[0, -0.2, 0]} />
       </RigidBody>
 
       {/* Main ground — warm terracotta/sand, huge so edges never visible */}

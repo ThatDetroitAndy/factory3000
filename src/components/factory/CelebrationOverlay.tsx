@@ -75,7 +75,7 @@ export default function CelebrationOverlay({ name, carNumber, carType, color, po
     {/* THE CAR — drops from belt height under gravity, bounces, then turntable reveal */}
     <RigidBody
       ref={bodyRef}
-      position={[position[0], position[1] + 4, position[2]]}
+      position={[position[0], position[1] + 2, position[2]]}
       lockRotations
       restitution={0.35}
       friction={0.9}
@@ -83,7 +83,7 @@ export default function CelebrationOverlay({ name, carNumber, carType, color, po
       colliders={false}
     >
       {/* Manual collider at car body center — wheels bottom at ~y=0, top at ~y=1.5 at scale 1.3 */}
-      <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0.5, 0]} />
+      <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0.65, 0]} />
       <group ref={innerCarRef}>
         <CarModel carType={carType} color={color} scale={1.3} />
       </group>
