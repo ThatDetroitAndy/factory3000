@@ -174,7 +174,10 @@ export default function DriveMode({ carType, color, startPosition, onExit }: Dri
       {/* Collider: half-extents [width, height, depth]. Bottom of collider at y=0 relative to body */}
       {/* With body at y=0.65 and collider at [0,0,0] with half-height 0.65, bottom = 0.65-0.65 = 0 = ground */}
       <CuboidCollider args={[1.2, 0.65, 2.1]} position={[0, 0, 0]} />
-      <CarModel carType={carType} color={color} scale={1.3} />
+      {/* Offset car model down so wheel bottoms (y=0 in model space) align with collider bottom (y=-0.65 relative to body) */}
+      <group position={[0, -0.65, 0]}>
+        <CarModel carType={carType} color={color} scale={1.3} />
+      </group>
     </RigidBody>
   )
 }

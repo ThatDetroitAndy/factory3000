@@ -2,7 +2,7 @@
 
 import * as THREE from 'three'
 import { isMobileDevice } from '@/lib/isMobile'
-import { RigidBody, CylinderCollider } from '@react-three/rapier'
+import { RigidBody, CuboidCollider, CylinderCollider } from '@react-three/rapier'
 
 /** Low-poly tree — chunky trunk + round canopy */
 function Tree({ position, scale = 1, color = '#4CAF50' }: { position: [number, number, number]; scale?: number; color?: string }) {
@@ -215,7 +215,8 @@ export default function FactoryProps() {
       {!mobile && <Bush position={[55, 0, -55]} />}
 
       {/* Tire stacks near the factory — dynamic physics, cars can knock them! */}
-      <RigidBody type="dynamic" position={[15, 0, -5]} mass={10} colliders="hull" angularDamping={0.5}>
+      <RigidBody type="dynamic" position={[15, 0, -5]} mass={10} colliders={false} angularDamping={0.5} restitution={0.3}>
+        <CuboidCollider args={[0.5, 0.7, 0.5]} position={[0, 0.7, 0]} />
         <TireStack position={[0, 0, 0]} />
       </RigidBody>
       {!mobile && (
@@ -223,33 +224,34 @@ export default function FactoryProps() {
           <TireStack position={[0, 0, 0]} />
         </RigidBody>
       )}
-      <RigidBody type="dynamic" position={[-15, 0, 5]} mass={10} colliders="hull" angularDamping={0.5}>
+      <RigidBody type="dynamic" position={[-15, 0, 5]} mass={10} colliders={false} angularDamping={0.5} restitution={0.3}>
+        <CuboidCollider args={[0.5, 0.7, 0.5]} position={[0, 0.7, 0]} />
         <TireStack position={[0, 0, 0]} />
       </RigidBody>
 
       {/* Oil barrels — dynamic physics with cylinder colliders so they roll! */}
-      <RigidBody type="dynamic" position={[18, 0, 10]} mass={20} colliders={false} angularDamping={0.3}>
+      <RigidBody type="dynamic" position={[18, 0, 10]} mass={20} colliders={false} angularDamping={0.3} restitution={0.4}>
         <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
         <Barrel position={[0, 0, 0]} color="#4A90D9" />
       </RigidBody>
-      <RigidBody type="dynamic" position={[18.5, 0, 11]} mass={20} colliders={false} angularDamping={0.3}>
+      <RigidBody type="dynamic" position={[18.5, 0, 11]} mass={20} colliders={false} angularDamping={0.3} restitution={0.4}>
         <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
         <Barrel position={[0, 0, 0]} color="#FF6B4A" />
       </RigidBody>
       {!mobile && (
-        <RigidBody type="dynamic" position={[19, 0, 9.5]} mass={20} colliders={false} angularDamping={0.3}>
+        <RigidBody type="dynamic" position={[19, 0, 9.5]} mass={20} colliders={false} angularDamping={0.3} restitution={0.4}>
           <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
           <Barrel position={[0, 0, 0]} color="#4A90D9" />
         </RigidBody>
       )}
       {!mobile && (
-        <RigidBody type="dynamic" position={[-18, 0, -15]} mass={20} colliders={false} angularDamping={0.3}>
+        <RigidBody type="dynamic" position={[-18, 0, -15]} mass={20} colliders={false} angularDamping={0.3} restitution={0.4}>
           <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
           <Barrel position={[0, 0, 0]} color="#FFD700" />
         </RigidBody>
       )}
       {!mobile && (
-        <RigidBody type="dynamic" position={[-17, 0, -15.5]} mass={20} colliders={false} angularDamping={0.3}>
+        <RigidBody type="dynamic" position={[-17, 0, -15.5]} mass={20} colliders={false} angularDamping={0.3} restitution={0.4}>
           <CylinderCollider args={[0.6, 0.35]} position={[0, 0.6, 0]} />
           <Barrel position={[0, 0, 0]} color="#4A90D9" />
         </RigidBody>
@@ -267,10 +269,12 @@ export default function FactoryProps() {
       {!mobile && <Flag position={[0, 0, 80]} color="#FF6B6B" />}
 
       {/* Traffic cones — light and tumble-friendly, cars send them flying! */}
-      <RigidBody type="dynamic" position={[-8, 0, 20]} mass={2} colliders="hull" angularDamping={0.1}>
+      <RigidBody type="dynamic" position={[-8, 0, 20]} mass={2} colliders={false} angularDamping={0.1} restitution={0.5}>
+        <CuboidCollider args={[0.25, 0.35, 0.25]} position={[0, 0.35, 0]} />
         <Cone position={[0, 0, 0]} />
       </RigidBody>
-      <RigidBody type="dynamic" position={[8, 0, 20]} mass={2} colliders="hull" angularDamping={0.1}>
+      <RigidBody type="dynamic" position={[8, 0, 20]} mass={2} colliders={false} angularDamping={0.1} restitution={0.5}>
+        <CuboidCollider args={[0.25, 0.35, 0.25]} position={[0, 0.35, 0]} />
         <Cone position={[0, 0, 0]} />
       </RigidBody>
       {!mobile && (
