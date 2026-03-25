@@ -5,6 +5,9 @@ YouTube-driven virtual car factory. **1 Subscriber = 1 Car.** Browser-based 3D f
 
 Related to Mutiny Motors (~​/Mutiny Motors) — Factory 3000 is the digital/YouTube/community side. Separate codebase, separate deploy.
 
+## North Star Vision
+**"Club Penguin with cars."** A persistent online world where kids hang out, customize their cars, drive around, and interact with each other. The factory is the hub. Every subscriber has a car. The world gets bigger and more alive as the community grows. This is the long-term direction everything is building toward.
+
 ## Core Objective
 The audience is **kids and young adults** from Andy's YouTube channel. The site should feel like a **good video game** — polished models, good sprites, satisfying interactions. The goals:
 1. **Fun first** — visitors should have a blast the moment they load the page
@@ -75,6 +78,7 @@ Handle real traffic, make sharing irresistible.
 - [ ] **InstancedMesh rendering** for 100K+ cars in the parking lot (perf critical)
 - [ ] **YouTube API integration** — live subscriber count displayed in-world, crate count updates automatically
 - [ ] **Social share image** — generate a screenshot/card of your car + number + name, optimized for Twitter/IG/TikTok
+- [ ] **Mobile experience overhaul** — currently poor; needs significant work to be actually fun on phones. Touch controls exist but performance, layout, and interaction quality all need major attention. The eventual goal is full parity with desktop.
 - [ ] **Mobile performance** — LOD, culling, reduced draw calls for phones
 - [ ] **Supabase Auth email templates** — branded magic link emails
 - [ ] **Loading screen** — branded, fun, shows factory progress stats while loading 3D

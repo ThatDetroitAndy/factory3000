@@ -179,72 +179,99 @@ export function stopEngine(): void {
 }
 
 // ── Horn ─────────────────────────────────────────────────────────────────────
-// Two-tone "beep-beep!" — two detuned sawtooth oscillators through a bandpass
-// filter for that classic reedy car-horn timbre. Each honk has a slight upward
-// pitch slide for a cartoony "squeezy" feel. Second honk is a step higher.
+// "Awooga!" cartoon horn — classic multi-tone descending klaxon.
+// Built from three layers:
+//   1. Main pitch sweep: square wave sliding rapidly down (the "aw-oo-ga" vowel shape)
+//   2. Nasal buzz: sawtooth through bandpass for that reedy klaxon rasp
+//   3. Sub thud: sine body for weight
+// The pitch sweeps down fast then back up slightly, giving it the iconic
+// "awOOga" contour. Two closely-spaced attacks make it feel like it's honking twice.
 export function playHorn(): void {
   try {
     const c = getCtx()
 
-    function honk(startTime: number, baseFreq: number) {
-      // Bandpass filter shapes the raw sawtooth into a nasal horn tone
-      const filter = c.createBiquadFilter()
-      filter.type = 'bandpass'
-      filter.frequency.value = baseFreq * 1.8
-      filter.Q.value = 2.5
+    function awooga(startTime: number, pitchMult: number) {
+      const dur = 0.55
 
-      const masterGain = c.createGain()
-      // Punchy attack → short sustain → snappy decay
-      masterGain.gain.setValueAtTime(0, startTime)
-      masterGain.gain.linearRampToValueAtTime(0.32, startTime + 0.012)
-      masterGain.gain.setValueAtTime(0.30, startTime + 0.18)
-      masterGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.30)
+      // === Layer 1: Main klaxon sweep (square wave, pitch slides down then settles) ===
+      const sweep = c.createOscillator()
+      sweep.type = 'square'
+      // Classic awooga: starts high, drops fast, settles mid
+      sweep.frequency.setValueAtTime(520 * pitchMult, startTime)
+      sweep.frequency.linearRampToValueAtTime(260 * pitchMult, startTime + 0.08)
+      sweep.frequency.linearRampToValueAtTime(220 * pitchMult, startTime + 0.20)
+      sweep.frequency.setValueAtTime(220 * pitchMult, startTime + 0.22)
+      sweep.frequency.linearRampToValueAtTime(240 * pitchMult, startTime + dur)
 
-      filter.connect(masterGain)
-      masterGain.connect(c.destination)
+      const sweepFilter = c.createBiquadFilter()
+      sweepFilter.type = 'bandpass'
+      sweepFilter.frequency.value = 700 * pitchMult
+      sweepFilter.Q.value = 1.8
 
-      // Osc 1: slides up from slightly flat → adds cartoon "squeak" feel
-      const o1 = c.createOscillator()
-      o1.type = 'sawtooth'
-      o1.frequency.setValueAtTime(baseFreq * 0.94, startTime)
-      o1.frequency.linearRampToValueAtTime(baseFreq, startTime + 0.025)
-      const g1 = c.createGain()
-      g1.gain.value = 0.58
-      o1.connect(g1)
-      g1.connect(filter)
-      o1.start(startTime)
-      o1.stop(startTime + 0.38)
+      const sweepGain = c.createGain()
+      sweepGain.gain.setValueAtTime(0, startTime)
+      sweepGain.gain.linearRampToValueAtTime(0.28, startTime + 0.015)
+      sweepGain.gain.setValueAtTime(0.25, startTime + 0.35)
+      sweepGain.gain.exponentialRampToValueAtTime(0.001, startTime + dur)
 
-      // Osc 2: slightly sharp detune — creates beating/chorus richness
-      const o2 = c.createOscillator()
-      o2.type = 'sawtooth'
-      o2.frequency.setValueAtTime(baseFreq * 0.97, startTime)
-      o2.frequency.linearRampToValueAtTime(baseFreq * 1.014, startTime + 0.025)
-      const g2 = c.createGain()
-      g2.gain.value = 0.42
-      o2.connect(g2)
-      g2.connect(filter)
-      o2.start(startTime)
-      o2.stop(startTime + 0.38)
+      sweep.connect(sweepFilter)
+      sweepFilter.connect(sweepGain)
+      sweepGain.connect(c.destination)
+      sweep.start(startTime)
+      sweep.stop(startTime + dur + 0.05)
 
-      // Sub-octave body — adds weight so it sounds like a real horn, not a toy beep
+      // === Layer 2: Raspy sawtooth buzz — the nasal klaxon character ===
+      const buzz = c.createOscillator()
+      buzz.type = 'sawtooth'
+      buzz.frequency.setValueAtTime(260 * pitchMult, startTime)
+      buzz.frequency.linearRampToValueAtTime(215 * pitchMult, startTime + 0.12)
+      buzz.frequency.linearRampToValueAtTime(230 * pitchMult, startTime + dur)
+
+      const buzzFilter = c.createBiquadFilter()
+      buzzFilter.type = 'bandpass'
+      buzzFilter.frequency.value = 900 * pitchMult
+      buzzFilter.Q.value = 3.5
+
+      // Second bandpass stacked for extra nasal bite
+      const buzzFilter2 = c.createBiquadFilter()
+      buzzFilter2.type = 'peaking'
+      buzzFilter2.frequency.value = 1800
+      buzzFilter2.gain.value = 8
+      buzzFilter2.Q.value = 2
+
+      const buzzGain = c.createGain()
+      buzzGain.gain.setValueAtTime(0, startTime)
+      buzzGain.gain.linearRampToValueAtTime(0.18, startTime + 0.02)
+      buzzGain.gain.setValueAtTime(0.16, startTime + 0.35)
+      buzzGain.gain.exponentialRampToValueAtTime(0.001, startTime + dur)
+
+      buzz.connect(buzzFilter)
+      buzzFilter.connect(buzzFilter2)
+      buzzFilter2.connect(buzzGain)
+      buzzGain.connect(c.destination)
+      buzz.start(startTime)
+      buzz.stop(startTime + dur + 0.05)
+
+      // === Layer 3: Sub-bass body thud for satisfying weight ===
       const sub = c.createOscillator()
       sub.type = 'sine'
-      sub.frequency.value = baseFreq * 0.5
+      sub.frequency.setValueAtTime(130 * pitchMult, startTime)
+      sub.frequency.linearRampToValueAtTime(110 * pitchMult, startTime + 0.10)
+
       const subGain = c.createGain()
       subGain.gain.setValueAtTime(0, startTime)
-      subGain.gain.linearRampToValueAtTime(0.12, startTime + 0.015)
-      subGain.gain.setValueAtTime(0.10, startTime + 0.18)
-      subGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.30)
+      subGain.gain.linearRampToValueAtTime(0.14, startTime + 0.018)
+      subGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25)
+
       sub.connect(subGain)
       subGain.connect(c.destination)
       sub.start(startTime)
-      sub.stop(startTime + 0.38)
+      sub.stop(startTime + 0.30)
     }
 
-    // "Beep — BEEP!" — first honk at A4 area, second a minor third higher
-    honk(c.currentTime, 415)
-    honk(c.currentTime + 0.33, 494)
+    // Two quick awooga hits — second one pitched down a minor third for variety
+    awooga(c.currentTime, 1.0)
+    awooga(c.currentTime + 0.60, 0.84)
   } catch { /* ignore */ }
 }
 
